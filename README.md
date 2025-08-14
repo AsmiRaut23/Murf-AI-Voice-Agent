@@ -215,6 +215,7 @@ Removed unnecessary elements for a cleaner interface
 
 ## 📸 Screenshots
   ![alt text](UI.png)
+  
 🚀 The voice agent now functions like a fully-fledged app, moving beyond just a prototype.
 
 ---
