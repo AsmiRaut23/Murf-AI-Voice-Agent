@@ -1,0 +1,20 @@
+# requirements.txt
+
+Flask==3.0.3
+python-dotenv==1.0.1
+requests==2.32.3
+openai==1.35.13
+murf-ai
+
+
+# Web server framework
+# Flask==3.0.3
+
+# For audio transcription and LLM responses
+# openai==1.35.13
+
+# For text-to-speech generation
+# murf-ai==0.6.0
+
+# Optional but highly recommended for managing API keys
+# python-dotenv==1.0.1

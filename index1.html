@@ -1,0 +1,643 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Agent - AssemblyAI Pipeline Day 9</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>Welcome to my AI Voice Agents</h1>
+        <div class="controls">
+            <button id="recordButton">Ask Question</button>
+            <button id="stopButton" disabled>That’s All</button>
+        </div>
+        <div id="status">Click "Ask Question" to speak.</div><br>
+        <audio id="responseAudio" controls></audio>
+    </div>
+
+    <script>
+        const recordButton = document.getElementById('recordButton');
+        const stopButton = document.getElementById('stopButton');
+        const responseAudio = document.getElementById('responseAudio');
+        const statusDiv = document.getElementById('status');
+        let mediaRecorder;
+        let audioChunks = [];
+
+        recordButton.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                
+                mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+                
+                mediaRecorder.onstop = () => {
+                    statusDiv.textContent = 'Recording stopped. Uploading for transcription...';
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    audioChunks = [];
+                    transcribeAudio(audioBlob);
+                };
+                
+                mediaRecorder.start();
+                recordButton.disabled = true;
+                stopButton.disabled = false;
+                statusDiv.textContent = 'Recording...';
+            } catch (error) {
+                statusDiv.textContent = 'Error: Could not access microphone.';
+            }
+        });
+
+        stopButton.addEventListener('click', () => {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+                recordButton.disabled = false;
+                stopButton.disabled = true;
+            }
+        });
+
+        async function transcribeAudio(audioBlob) {
+            // Step 1: Send the audio FILE to the /transcribe endpoint
+            const formData = new FormData();
+            formData.append('file', audioBlob, 'recording.webm'); // The key is "file"
+
+            try {
+                const transcribeResponse = await fetch('/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!transcribeResponse.ok) {
+                    const error = await transcribeResponse.json();
+                    throw new Error(`Transcription failed: ${error.details || transcribeResponse.statusText}`);
+                }
+                
+                const data = await transcribeResponse.json();
+                const transcribedText = data.text;
+                statusDiv.textContent = `You said: "${transcribedText}". Processing...`;
+
+                // Step 2: Send the transcribed TEXT to the /llm/query endpoint
+                await getLLMResponse(transcribedText);
+
+            } catch (error) {
+                statusDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function getLLMResponse(text) {
+            try {
+                const llmResponse = await fetch('/llm/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+
+                if (!llmResponse.ok) {
+                    const error = await llmResponse.json();
+                    throw new Error(`LLM Query failed: ${error.details || llmResponse.statusText}`);
+                }
+
+                const data = await llmResponse.json();
+                responseAudio.src = data.audio_url; // Set the audio source from the response
+                responseAudio.play();
+                statusDiv.textContent = 'Response received! Playing audio...';
+
+            } catch (error) {
+                statusDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- day 10 -->
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Day 10 - AI Voice Agent</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+    <h1>AI Voice Agent</h1>
+
+    <div class="controls">
+        <button id="startBtn">Ask Question</button>
+        <button id="stopBtn" disabled>That’s All</button>
+    </div>
+
+    <p id="status"></p>
+    <audio id="responseAudio" controls></audio>
+    </div>
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let sessionId = null;
+
+        const startBtn = document.getElementById("startBtn");
+        const stopBtn = document.getElementById("stopBtn");
+        const statusEl = document.getElementById("status");
+        const responseAudio = document.getElementById("responseAudio");
+
+        const setStatus = (message, isError = false) => {
+            statusEl.textContent = message;
+            statusEl.className = isError ? 'error-message' : '';
+        };
+
+        window.addEventListener("DOMContentLoaded", () => {
+            sessionId = "session_" + Date.now();
+
+            startBtn.addEventListener("click", startRecording);
+            stopBtn.addEventListener("click", stopRecording);
+
+            setStatus("Click 'Ask Question' to begin.");
+        });
+
+        function startRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    audioChunks = [];
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.start();
+
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    setStatus("Listening... Click 'That’s All' when done.");
+
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        sendAudioToServer(audioBlob);
+                    };
+                })
+                .catch(err => setStatus("Microphone error: " + err.message, true));
+        }
+
+        function stopRecording() {
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            setStatus("Processing your question...");
+
+            if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                mediaRecorder.stop();
+            }
+        }
+
+        function sendAudioToServer(audioBlob) {
+            const formData = new FormData();
+            formData.append("audio", audioBlob);
+
+            fetch(`/agent/chat/${sessionId}`, {
+                method: "POST",
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("TTS failed");
+                return response.blob();
+            })
+            .then(audioBlob => {
+                setStatus("Agent is speaking...");
+                playAudio(audioBlob);
+                setStatus("Ready for your next question.");
+            })
+            .catch(err => setStatus("Error: " + err.message, true));
+        }
+
+        function playAudio(audioBlob) {
+            const audioUrl = URL.createObjectURL(audioBlob);
+            responseAudio.src = audioUrl;
+            responseAudio.play();
+        }
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+<!-- day 11 -->
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Voice Agent with Chat History</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>AI Voice Agent</h1>
+
+        <div class="controls">
+            <button id="startBtn">Ask Question</button>
+            <button id="stopBtn" disabled>That’s All</button>
+        </div>
+
+        <p id="status"></p>
+        <audio id="responseAudio" controls></audio>
+    </div>
+
+<script>
+let mediaRecorder;
+let audioChunks = [];
+let sessionId = new Date().getTime().toString(); // unique session ID per visit
+
+document.getElementById("startBtn").addEventListener("click", startRecording);
+document.getElementById("stopBtn").addEventListener("click", stopRecording);
+
+function setStatus(message, isError = false) {
+    const statusEl = document.getElementById("status");
+    statusEl.textContent = message;
+    statusEl.style.color = isError ? "red" : "white";
+}
+
+function startRecording() {
+    setStatus("🎙️ Listening...");
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.addEventListener("dataavailable", event => {
+                audioChunks.push(event.data);
+            });
+
+            mediaRecorder.addEventListener("stop", () => {
+                const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+                sendAudioToServer(audioBlob);
+            });
+
+            mediaRecorder.start();
+            document.getElementById("startBtn").disabled = true;
+            document.getElementById("stopBtn").disabled = false;
+        })
+        .catch(err => {
+            console.error("Mic access error:", err);
+            setStatus("❌ Could not access microphone", true);
+        });
+}
+
+function stopRecording() {
+    setStatus("Processing your question...");
+    mediaRecorder.stop();
+    document.getElementById("startBtn").disabled = false;
+    document.getElementById("stopBtn").disabled = true;
+}
+
+function sendAudioToServer(audioBlob) {
+    const formData = new FormData();
+    formData.append("audio", audioBlob);
+
+    fetch(`/agent/chat/${sessionId}`, {
+        method: "POST",
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) throw new Error("Server error or fallback triggered");
+        return response.blob();
+    })
+    .then(audioBlob => {
+        setStatus("Agent is speaking...");
+        playAudio(audioBlob);
+        setStatus(" Ready for your next question.");
+    })
+
+
+
+    .catch(err => {
+        console.error(err);
+        setStatus("⚠️ The agent is having trouble right now.", true);
+    });
+}
+
+function playAudio(audioBlob) {
+    const audioURL = URL.createObjectURL(audioBlob);
+    const audioEl = document.getElementById("responseAudio");
+    audioEl.src = audioURL;
+    audioEl.play();
+}
+</script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- day 12 
+correct 
+-->
+
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Voice Agent</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        /* Recording pulse animation */
+        .recording {
+            animation: pulse 1s infinite;
+            background-color: #ff1744 !important;
+            color: white !important;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 23, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Voice Agent</h1>
+
+        <div class="controls">
+            <button id="recordBtn">🎙 Start</button>
+        </div>
+
+        <p id="status"></p>
+        <audio id="responseAudio" style="display: none;"></audio>
+    </div>
+
+<script>
+let mediaRecorder;
+let audioChunks = [];
+let recording = false;
+let sessionId = Date.now().toString(); // unique per visit
+
+const recordBtn = document.getElementById("recordBtn");
+const statusEl = document.getElementById("status");
+
+recordBtn.addEventListener("click", toggleRecording);
+
+function setStatus(message, isError = false) {
+    statusEl.textContent = message;
+    statusEl.style.color = isError ? "red" : "white";
+}
+
+function toggleRecording() {
+    if (!recording) {
+        startRecording();
+    } else {
+        stopRecording();
+    }
+}
+
+function startRecording() {
+    setStatus("🎙️ Listening...");
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.addEventListener("dataavailable", e => {
+                audioChunks.push(e.data);
+            });
+
+            mediaRecorder.addEventListener("stop", () => {
+                const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+                sendAudioToServer(audioBlob);
+            });
+
+            mediaRecorder.start();
+            recording = true;
+            recordBtn.textContent = "⏹ Stop";
+            recordBtn.classList.add("recording");
+        })
+        .catch(err => {
+            console.error("Mic access error:", err);
+            setStatus("❌ Could not access microphone", true);
+        });
+}
+
+function stopRecording() {
+    setStatus("Processing your question...");
+    mediaRecorder.stop();
+    recording = false;
+    recordBtn.textContent = "🎙 Start";
+    recordBtn.classList.remove("recording");
+}
+
+function sendAudioToServer(audioBlob) {
+    const formData = new FormData();
+    formData.append("audio", audioBlob);
+
+    fetch(`/agent/chat/${sessionId}`, {
+        method: "POST",
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) throw new Error("Server error or fallback triggered");
+        return response.blob();
+    })
+    .then(audioBlob => {
+        setStatus("Agent is speaking...");
+        playAudio(audioBlob);
+        setStatus("✅ Ready for your next question.");
+    })
+    .catch(err => {
+        console.error(err);
+        setStatus("⚠️ The agent is having trouble right now.", true);
+    });
+}
+
+function playAudio(audioBlob) {
+    const audioURL = URL.createObjectURL(audioBlob);
+    const audioEl = document.getElementById("responseAudio");
+    audioEl.src = audioURL;
+    audioEl.play();
+}
+</script>
+</body>
+</html> -->
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kampra AI</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="container card">
+    <h1>Kampra AI</h1>
+    <p class="subtitle"> AI Conversational Partner</p>
+
+    <div class="voice-select">
+      <label for="voice">Select a Voice:</label>
+      <select id="voice">
+        <option value="en-US-natalie">Natalie (female)</option>
+        <option value="en-US-jake">Jake (male)</option>
+        <option value="en-GB-sophia">Sophia (female)</option>
+        <option value="en-IN-raj">Raj (male)</option>
+      </select>
+    </div>
+
+    <div class="mic-area">
+      <button id="recordBtn" class="mic-btn" aria-label="Record">
+        <span class="mic-icon"><img src="/static/mic.png" alt="mic"></span>
+      </button>
+      <div class="status-dot" id="statusDot"></div>
+      <p id="status">Ready</p>
+    </div>
+
+    <div id="chatBox" class="chat-box"></div>
+
+    <!-- hidden player: audio auto-plays -->
+    <audio id="responseAudio" style="display:none;"></audio>
+  </div>
+
+  <script>
+    let mediaRecorder;
+    let audioChunks = [];
+    let recording = false;
+    const sessionId = Date.now().toString();
+
+    const recordBtn = document.getElementById('recordBtn');
+    const statusEl = document.getElementById('status');
+    const statusDot = document.getElementById('statusDot');
+    const voiceSel = document.getElementById('voice');
+    const chatBox = document.getElementById('chatBox');
+    const responseAudio = document.getElementById('responseAudio');
+
+    const setStatus = (msg, isError=false) => {
+      statusEl.textContent = msg;
+      statusEl.style.color = isError ? '#ff6b6b' : '#cfd8dc';
+    };
+
+    const addMsg = (who, text) => {
+      if (!text) return;
+      const div = document.createElement('div');
+      div.className = who === 'user' ? 'bubble user' : 'bubble ai';
+      div.textContent = (who === 'user' ? 'You: ' : 'Kampra AI: ') + text;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    };
+
+    // recordBtn.addEventListener('click', () => {
+    //   if (!recording) startRecording();
+    //   else stopRecording();
+    // });
+
+    recordBtn.addEventListener('click', () => {
+  if (!recording) {
+    startRecording();
+    recordBtn.classList.add('recording'); // start animation
+    console.log("Recording started");
+  } else {
+    stopRecording();
+    recordBtn.classList.remove('recording'); // stop animation
+    console.log("Recording stopped");
+  }
+});
+
+
+    function startRecording() {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+          mediaRecorder.ondataavailable = e => { if (e.data.size) audioChunks.push(e.data); };
+          mediaRecorder.onstop = onStopped;
+          mediaRecorder.start();
+
+          recording = true;
+          recordBtn.classList.add('recording');
+          statusDot.classList.add('on');
+          setStatus('Listening…');
+        })
+        .catch(err => {
+          console.error('Mic error:', err);
+          setStatus('Microphone access denied', true);
+        });
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        recording = false;
+        recordBtn.classList.remove('recording');
+        statusDot.classList.remove('on');
+        setStatus('Processing…');
+      }
+    }
+
+    function onStopped() {
+      const blob = new Blob(audioChunks, { type: 'audio/webm' });
+      const form = new FormData();
+      form.append('audio', blob, 'input.webm');
+      form.append('voice_id', voiceSel.value);
+
+      fetch(`/agent/chat/${sessionId}`, { method: 'POST', body: form })
+        .then(async res => {
+          const transcript = res.headers.get('X-Transcript') || '';
+          const reply = res.headers.get('X-Reply') || '';
+
+          if (transcript) addMsg('user', transcript);
+          if (reply) addMsg('ai', reply);
+
+          if (!res.ok) throw new Error('Server error');
+
+          const audioBlob = await res.blob();
+          const url = URL.createObjectURL(audioBlob);
+          responseAudio.src = url;
+          responseAudio.play();
+
+          setStatus('Ready');
+        })
+        .catch(err => {
+          console.error(err);
+          addMsg('ai', "I'm having trouble connecting right now.");
+          setStatus('Trouble connecting', true);
+        });
+    }
+  </script>
+</body>
+</html>
