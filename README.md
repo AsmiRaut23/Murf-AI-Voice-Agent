@@ -50,16 +50,33 @@ It listens to your voice, understands your intent, and responds back with natura
 ## 📂 Project Structure
 
 ```
-├── AI-Voice-Agent-Challenge           # Project Root
-│   📂 main.py                         # Backend Logic (Flask App)
-|   📂 static                          # Static Assets (JS/CSS)
-│   ├── script.js                      # Frontend Logic (JavaScript)
-│   ├── style.css                     # Styling (CSS)
-|   📂 templates                      # TML Templates Folder
-│   ├── index1.html                   # Main UI Page
-|   📂 .env                           # nvironment Variables (API Keys)
-|   📂 requirements.txt               # Python Dependencies
-|   📂 README.md                      # Project Overview & Instructions
+├── AI-Voice-Agent-Challenge
+│
+├── main.py               # Flask entry point
+├── 📂services/
+│   ├── __init__.py
+│   ├── stt_service.py   # Speech-to-Text logic (AssemblyAI)
+│   ├── tts_service.py   # Text-to-Speech logic (Murf)
+│   └── llm_service.py   # LLM (Gemini API)
+│
+├── 📂models/
+│   ├── __init__.py
+│   └── chat_models.py   # Pydantic schemas for request/response
+│
+├── 📂utils/
+│   ├── __init__.py
+│   └── logger.py        # Logging configuration
+│
+├── 📂templates/
+│   └── index.html         # Main UI Page
+├── 📂static/
+│   ├── script.js          # Frontend Logic (JavaScript)
+│   ├── style.css          # Styling (CSS)
+│   ├── UI.png
+│   └── mic.png
+├── requirements.txt       # Python Dependencies
+└── README.md              # Project Overview & Instructions
+
 ```
 ---
 
