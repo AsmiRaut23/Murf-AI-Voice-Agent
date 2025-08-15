@@ -9,7 +9,7 @@ chat_history = {}
 
 @app.route("/")
 def index():
-    return render_template("index1.html")
+    return render_template("index.html")
 
 @app.route("/agent/chat/<session_id>", methods=["POST"])
 def agent_chat(session_id):
@@ -51,4 +51,5 @@ def agent_chat(session_id):
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
