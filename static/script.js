@@ -78,10 +78,16 @@ let mediaRecorder;
       form.append('audio', blob, 'input.webm');
       form.append('voice_id', voiceSel.value);
 
-      fetch(/agent/chat/${sessionId}, { method: 'POST', body: form })
+fetch(`/agent/chat/${sessionId}`, { method: 'POST', body: form })
+
         .then(async res => {
+          console.log("Response status:", res.status);
+          console.log("Headers:", [...res.headers.entries()]);
+
           const transcript = res.headers.get('X-Transcript') || '';
           const reply = res.headers.get('X-Reply') || '';
+          console.log("Transcript:", transcript);
+          console.log("Reply:", reply);
 
           if (transcript) addMsg('user', transcript);
           if (reply) addMsg('ai', reply);
@@ -95,6 +101,20 @@ let mediaRecorder;
 
           setStatus('Ready');
         })
+
+
+
+
+        
+
+
+
+
+
+
+
+
+
         .catch(err => {
           console.error(err);
           addMsg('ai', "I'm having trouble connecting right now.");

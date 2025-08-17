@@ -32,7 +32,7 @@ def agent_chat(session_id):
         if not murf_url:
             return jsonify({"error": "TTS failed"}), 500
 
-        audio_bytes = requests.get(murf_url).content
+        audio_bytes = request.get(murf_url).content
         resp = Response(audio_bytes, mimetype="audio/mpeg")
         resp.headers["X-Transcript"] = transcript
         resp.headers["X-Reply"] = ai_reply
@@ -42,7 +42,7 @@ def agent_chat(session_id):
         logger.error(f"Pipeline error: {e}")
         fb_url = fallback_audio(voice_id)
         if fb_url:
-            audio_bytes = requests.get(fb_url).content
+            audio_bytes = request.get(fb_url).content
             resp = Response(audio_bytes, mimetype="audio/mpeg")
             resp.headers["X-Transcript"] = transcript
             resp.headers["X-Reply"] = "Error occurred"

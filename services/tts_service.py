@@ -7,7 +7,7 @@ FALLBACK_MESSAGE = "I'm having trouble connecting right now. Please try again la
 
 def generate_audio(text: str, voice_id: str) -> str | None:
     headers = {'Content-Type': 'application/json', 'api-key': MURF_API_KEY}
-    payload = {"text": text, "voice_id": voice_id, "format": "mp3", "sampleRate": "44100"}
+    payload = {"text": text, "voice_id": "en-US-natalie", "format": "mp3", "sampleRate": "44100"}
     resp = requests.post(MURF_URL, headers=headers, json=payload)
     if resp.ok:
         return resp.json().get("audioFile")
