@@ -5790,7 +5790,7 @@ async def process_user_text(text: str, send_to_client):
         # 2. Send Gemini reply as text
         send_to_client(json.dumps({
             "type": "gemini_response",
-            "text": "hello from the server"
+            "text": reply
         }))
 
 
