@@ -1,0 +1,225 @@
+/* Reset + Body */
+body {
+  margin: 0;
+  font-family: "Helvetica", sans-serif;
+  background: #fafafa;
+  height: 100vh;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Container: full page + gradient + positioning context */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  position: relative; /* so absolute children stay inside */
+  background: linear-gradient(to bottom, #7B1FA2 20%, #4A148C 75%);
+  overflow: hidden;
+}
+
+/* Header (fixed) */
+header {
+  flex-shrink: 0;        /* don’t let it shrink */
+  z-index: 100;          /* stay above messages */
+  position: sticky;
+  padding: 15px 20px;
+  text-align: center;
+  top: 0;
+  left: 0;
+  width: 100%;
+  color: white;
+  z-index: 100;
+  /* subtle divider below header */
+  border-bottom: 1px solid rgba(255,255,255,0.5);
+  /* keep header transparent so the single gradient shows behind it */
+  background: transparent;
+}
+header h1 {
+  margin: 0;
+  /* font-size: 1.5rem; */
+}
+header h3 {
+  margin: 3px 0 0;
+  font-weight: normal;
+  /* font-size: 0.9rem; */
+}
+#settingsBtn {
+  position: absolute;
+  right: 40px;
+  top: 18px;
+  font-size: 20px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+/* Chat section (NO background here so it shares the container gradient) */
+#chat {
+  flex: 1;
+  background: transparent;           /* <— fixes the “second gradient layer” */
+  padding: 120px 20px 100px;          /* top for fixed header, bottom for input card */
+  color: white;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+/* Bubbles */
+.msg {
+  padding: 10px 15px;
+  border-radius: 15px;
+  max-width: 70%;
+  /* font-size: 0.95rem; */
+  font-size: 20px;
+  line-height: 1.4;
+}
+.msg.you {
+  background: rgba(245, 236, 236, 0.3);
+  color: white;
+  align-self: flex-start;
+}
+.msg.ai {
+  color: white;
+  background: rgba(162, 153, 153, 0.3);
+  align-self: flex-end;
+}
+
+
+/* Mic Button (inline next to Send) */
+#mic-btn {
+  position: fixed;
+  bottom: 20px;             /* distance from bottom */
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(145deg, #be59ea, #8846d8);
+  border: none;
+  border-radius: 50%;
+  width: 46px;
+  height: 46px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;            /* above chat content */
+}
+#mic-btn img {
+  width: 28px;
+  height: 28px;
+}
+
+
+#mic-btn.active{
+
+  animation: pulse 1.5s ease-in-out infinite; /* faster */
+}
+
+/* Keyframes for pulsing effect */
+@keyframes pulse {
+  0% {
+    background-color: rgb(94, 4, 94);
+    /* box-shadow: 0 0 0 0 rgba(106, 27, 154, 0.6); */
+    box-shadow: 0 0 0 0 rgba(186, 85, 211, 0.8); /* brighter glow */
+  }
+  70% {
+    background-color: purple;
+    /* box-shadow: 0 0 0 20px rgba(29, 9, 41, 0); */
+    box-shadow: 0 0 0 50px rgba(186, 85, 211, 0); /* 🔥 bigger spread */
+  }
+  100% {
+    background-color: rgb(32, 3, 32);
+    /* box-shadow: 0 0 0 0 rgba(68, 18, 99, 0); */
+    box-shadow: 0 0 0 0 rgba(186, 85, 211, 0);
+  }
+
+}
+
+/*  */
+
+/* Modal Background Overlay */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+}
+
+/* Modal Content */
+.modal-content {
+  background: white;
+  margin: 4% auto 2%;         /* ✅ move up slightly */
+  padding: 20px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  color: #333;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 80vh;            /* ✅ prevent overflow */
+  overflow-y: auto;            /* ✅ add scroll if needed */
+}
+.modal-content h2 {
+  margin: 0 0 8px 0;
+}
+.modal-content form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+}
+.modal-content label {
+  font-size: 0.9rem;
+  color: #444;
+}
+.modal-content input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+.modal-content button[type="submit"] {
+  align-self: flex-end;
+  padding: 8px 16px;
+  border: none;
+  background: #7B1FA2;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.modal-content button[type="submit"]:hover {
+  background: #9c4dcc;
+}
+
+/* Close Button */
+.close {
+  color: #888;
+  float: right;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.close:hover {
+  color: black;
+}
+
+/* Optional: status text so it doesn't clash with content */
+#status {
+  position: absolute;
+  top: 80px;
+  left: 10px;
+  color: rgba(255,255,255,0.8);
+  font-size: 12px;
+  margin: 0;
+  white-space: pre-wrap;
+}

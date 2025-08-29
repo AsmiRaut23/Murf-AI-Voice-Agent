@@ -20,9 +20,21 @@ body {
   box-shadow: 10px 10px 20px rgb(0, 0, 0,0.9);
 }
 
+button{
+  /* display: flex;
+  justify-items: end; */
+  /* align-items: space-around; */
+  border-radius: 11px;
+  color: purple;
+  border: none;
+  padding: 4px 6px;
+  margin-bottom: 12px;
+}
+
 button img {
   height: 24px;
   width: 24px;
+  margin: auto;
 }
 
 h1 {
@@ -58,16 +70,15 @@ select {
   font-size: 0.9rem;
 }
 
-.mic-controls {
+/* .mic-controls {
   display: flex;
   justify-content: center;
   gap: 15px;
   margin-bottom: 20px;
-}
+} 
 
-.mic-btn {
+ .mic-btn {
   background: linear-gradient(145deg, #be59ea, #8846d8);
-  /* background-color: white; */
   color: white;
   border: none;
   border-radius: 50%;
@@ -79,9 +90,83 @@ select {
   transition: transform 0.2s ease;
 }
 
-/* .mic-btn.recording {
+.mic-btn.recording {
   background-color: #e53935; 
   animation: pulse 1.2s infinite;
+}
+*/
+
+/* #mic-btn {
+  background: linear-gradient(145deg, #be59ea, #8846d8);
+  background-color: white;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  font-size: 1.8rem;
+  cursor: pointer;
+  box-shadow: 0 7px 15px rgba(0,0,0,0.5);
+  transition: transform 0.2s ease;
+} */
+
+/* #mic-btn.recording {
+  background-color: #e53935; 
+  animation: pulse 1.2s infinite;
+}
+
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.7);
+  }
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 20px rgba(229, 57, 53, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(229, 57, 53, 0);
+  }
+} */
+
+/* #mic-btn:hover {
+  transform: scale(1.1);
+} */
+/* 
+    #status {
+      white-space: pre-wrap;
+      text-align: left;
+      margin: 10px auto;
+      padding: 10px;
+      border: 1px solid #ccc;
+      width: 400px;
+      background: white;
+      color: black;
+    }
+    #transcript, #finalTranscript {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-top: 10px;
+      background-color: white;
+      color: purple;
+      width: 400px;
+      text-align: left;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+#chatBox {
+  background: white;
+  color: #4A148C;
+  font-size: 0.9rem;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: left;
+  height: 200px;
+  overflow-y: auto;
+  margin-bottom: 15px;
 } */
 
 
@@ -100,9 +185,6 @@ select {
   }
 } */
 
-.mic-btn:hover {
-  transform: scale(1.1);
-}
 
 #chatBox {
   background: white;
@@ -114,9 +196,10 @@ select {
   height: 200px;
   overflow-y: auto;
   margin-bottom: 15px;
-}
+} */
 
 audio {
+  
   width: 100%;
   border-radius: 10px;
 }
@@ -142,21 +225,400 @@ audio {
 
 
 /* Pulse animation when recording */
-.recording {
+/* .recording {
 
   animation: pulse 2s ease-in 0s infinite normal;
+} */
+
+
+#mic-btn {
+  background: linear-gradient(145deg, #be59ea, #8846d8);
+  background-color: white;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  font-size: 1.8rem;
+  cursor: pointer;
+  box-shadow: 0 7px 15px rgba(0,0,0,0.5);
+  transition: transform 0.2s ease;
+}
+
+#mic-btn:hover {
+  transform: scale(1.1);
+}
+
+
+#mic-btn.active{
+
+  animation: pulse 1.5s ease-in-out infinite; /* faster */
 }
 
 /* Keyframes for pulsing effect */
 @keyframes pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(106, 27, 154, 0.6);
+    background-color: rgb(94, 4, 94);
+    /* box-shadow: 0 0 0 0 rgba(106, 27, 154, 0.6); */
+    box-shadow: 0 0 0 0 rgba(186, 85, 211, 0.8); /* brighter glow */
   }
   70% {
-    box-shadow: 0 0 0 20px rgba(106, 27, 154, 0);
+    background-color: purple;
+    /* box-shadow: 0 0 0 20px rgba(29, 9, 41, 0); */
+    box-shadow: 0 0 0 50px rgba(186, 85, 211, 0); /* 🔥 bigger spread */
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(106, 27, 154, 0);
+    background-color: rgb(32, 3, 32);
+    /* box-shadow: 0 0 0 0 rgba(68, 18, 99, 0); */
+    box-shadow: 0 0 0 0 rgba(186, 85, 211, 0);
   }
 
+}
+
+
+
+#chat {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: white;
+  color: purple;
+  text-align: left;
+  /* width: 90%; */
+  max-width: 450px; /* optional: control width */
+  height: 250px;          /* fixed height */
+  border-radius: 10px;
+  overflow-y: auto;       /* scroll when messages overflow */
+  border: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+}
+
+#status{
+  background-color: white;
+  color: purple;
+  border-radius: 7px;
+  font-weight: 500;
+  line-height: 25px;
+}
+/* #chat blockquote {
+  margin: 0;
+  color: purple;
+  font-size: 1rem;
+} */
+
+
+.msg {
+  margin: 8px 0;
+  padding: 10px;
+  border-radius: 10px;
+  max-width: 80%;
+  line-height: 1.4;
+  }
+
+/* User message */
+.msg.you {
+  background-color: #e6d9f7;  /* light purple */
+  text-align: left;
+  align-self: flex-start;
+  border-radius: 5px;
+}
+
+    /* AI message */
+.msg.ai {
+  background-color: #d7f7d9;  /* light green */
+  text-align: left;
+  align-self: flex-end;
+  border-radius: 5px;
+}
+
+.label {
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Main body styling */
+body {
+  margin: 0;
+  font-family: "Helvetica", sans-serif;
+  background-color: #FFFFF0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 60px;
+  color: white;
+}
+
+.container {
+  text-align: center;
+  background: linear-gradient(to bottom, #7B1FA2 20%, #4A148C 75%);
+  color: white;
+  padding: 30px 20px;
+  border-radius: 40px;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin:0 auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 10px 10px 20px rgb(0, 0, 0,0.9);
+}
+
+button{
+  /* display: flex;
+  justify-items: end; */
+  /* align-items: space-around; */
+  border-radius: 11px;
+  color: purple;
+  border: none;
+  padding: 4px 6px;
+  margin-bottom: 12px;
+}
+
+button img {
+  height: 24px;
+  width: 24px;
+  margin: auto;
+}
+
+h1 {
+  font-size: 2rem;
+  margin-bottom: 5px;
+}
+
+p {
+  font-size: 1rem;
+  margin-bottom: 15px;
+  color: white;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: white;
+  margin-bottom: 20px;
+}
+
+.voice-select {
+  margin-bottom: 20px;
+}
+
+.voice-select label {
+  font-size: 0.9rem;
+  margin-right: 10px;
+}
+
+select {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.9rem;
+}
+
+/* .mic-controls {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 20px;
+} 
+
+ .mic-btn {
+  background: linear-gradient(145deg, #be59ea, #8846d8);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  font-size: 1.8rem;
+  cursor: pointer;
+  box-shadow: 0 7px 15px rgba(0,0,0,0.5);
+  transition: transform 0.2s ease;
+}
+
+.mic-btn.recording {
+  background-color: #e53935; 
+  animation: pulse 1.2s infinite;
+}
+*/
+
+
+
+/* Modal Save Button small */
+
+form button {
+  margin: 15px auto 0 auto; /* centers the button horizontally */
+  padding: 10px 20px;
+  border: none;
+  background: purple;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  display: block; /* important for auto margins to work */
+}
+
+
+form button:hover { background: #444; }
+
+header {
+  background: rgba(0, 0, 0, 0.3); /* black with 60% transparency */
+  color: #fff;
+  padding: 20px;
+  position: relative;
+}
+
+header h1 {
+  margin: 0;
+  /* font-size: 28px; */
+}
+
+header p {
+  margin: 5px 0;
+  /* font-size: 14px; */
+}
+
+#settingsBtn {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  font-size: 20px;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+.mic-container {
+  margin-top: 50px;
+}
+
+.mic-container img {
+  width: 100px;
+  cursor: pointer;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0,0,0,0.6);
+}
+
+.modal-content {
+  background: #fff;
+  color: purple;
+  margin: 10% auto;
+  padding: 20px;
+  border-radius: 10px;
+  width: 400px;
+  text-align: left;
+}
+
+.close {
+  float: right;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+form label {
+  display: block;
+  margin-top: 10px;
+}
+
+form input {
+  width: 90%;
+  padding: 8px;
+  margin-top: 5px;
+}
+
+
+
+
+
+
+/* 
+.text-input-area {
+  display: flex;
+  padding: 10px;
+  background: #f9f9f9;
+  border-top: 1px solid #ddd;
+}
+
+.text-input-area input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+}
+
+.text-input-area button {
+  margin-left: 8px;
+  padding: 10px 15px;
+  border: none;
+  background: purple;
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.text-input-area button:hover {
+  background: rgb(185, 52, 185);
+} */
+
+
+
+
+.text-input-area {
+  display: flex;
+  justify-content: center;   /* center horizontally */
+  align-items: center;
+  padding: 10px;
+  background: #f9f9f9;
+  width: 60%; 
+  border-top: 1px solid #ddd;
+}
+
+.text-input-area-inner {
+  display: flex;
+  align-items: center;
+  width: 60%;        /* control width (adjust: 40%, 50%, etc.) */
+  max-width: 600px;  /* don’t let it get too big */
+}
+.text-input-area-inner input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 60%;
+  outline: none;
+}
+
+.text-input-area-inner button {
+  margin-left: 8px;
+  padding: 10px 15px;
+  border: none;
+  background: purple;
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.text-input-area-inner button:hover {
+  background: rgb(185, 52, 185);
 }

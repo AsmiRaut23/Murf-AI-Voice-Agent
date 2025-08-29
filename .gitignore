@@ -102,3 +102,7 @@ wheels/
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+
+# Ignore config file
+config.json

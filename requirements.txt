@@ -1,8 +1,35 @@
-# requirements.txt
+# # requirements.txt
+
+# Flask==3.0.3
+# python-dotenv==1.0.1
+# requests==2.32.3
+# openai==1.35.13
+# murf-ai
+# # WebSockets support (use only this, avoid websocket-client)
+# websockets==15.0.1
+
+
+# # flask==2.3.3
+# flask-sock==0.6.0
+
+
+
+# # simple-websocket==1.0.0
+# # websockets==10.4
+# # assemblyai== 0.43.1
+
+
+
+
+
+
+
+
 
 Flask==3.0.3
+flask-sock==0.6.0
 python-dotenv==1.0.1
 requests==2.32.3
 openai==1.35.13
-murf-ai
-
+murf-ai==0.1.2    # pin to your working version
+websockets==15.0.1

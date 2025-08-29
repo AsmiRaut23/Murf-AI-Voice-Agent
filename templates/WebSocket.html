@@ -1,0 +1,2156 @@
+<!--  day 16 -->
+
+<!-- <!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>WS Audio Stream Test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 2rem; }
+    button { padding: 0.6rem 1rem; margin-right: 0.5rem; }
+    #log { margin-top: 1rem; white-space: pre-wrap; background:#f4f4f4; padding:1rem; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <h1>WebSocket Audio Streaming</h1>
+  <p>Streams mic audio to <code>/ws</code> as it’s recorded.</p>
+  <button id="start">Start</button>
+  <button id="stop" disabled>Stop</button>
+  <div id="log"></div>
+
+  <script>
+    let ws, mediaRecorder;
+
+    function log(msg) {
+      const el = document.getElementById('log');
+      el.textContent += msg + "\n";
+    }
+
+    document.getElementById('start').onclick = async () => {
+      // 1) Connect WebSocket
+      ws = new WebSocket("ws://" + location.host + "/ws");
+
+      ws.onopen = async () => {
+        log("WS connected");
+
+        // Tell server we are sending webm chunks
+        ws.send("mime:audio/webm");
+
+        // 2) Get microphone
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        // 3) Setup MediaRecorder
+        const options = { mimeType: "audio/webm;codecs=opus" };
+        mediaRecorder = new MediaRecorder(stream, options);
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0 && ws && ws.readyState === 1) {
+            ws.send(e.data); // send raw audio chunk
+            log("Sent chunk: " + e.data.size + " bytes");
+          }
+        };
+
+        mediaRecorder.onstart = () => log("Recording started");
+        mediaRecorder.onstop = () => log("Recording stopped");
+
+        // Send chunk every 500ms
+        mediaRecorder.start(500);
+
+        document.getElementById('start').disabled = true;
+        document.getElementById('stop').disabled = false;
+      };
+
+      ws.onmessage = (e) => log("WS message: " + e.data);
+      ws.onerror = (e) => log("WS error");
+      ws.onclose = () => log("WS closed");
+    };
+
+    document.getElementById('stop').onclick = () => {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+      }
+      if (ws && ws.readyState === 1) {
+        ws.close();
+      }
+      document.getElementById('start').disabled = false;
+      document.getElementById('stop').disabled = true;
+    };
+  </script>
+</body>
+</html> -->
+
+
+
+
+
+
+<!-- day 17 -->
+<!-- <!DOCTYPE html>
+<html>
+<head>
+  <title>WebSocket Audio Streaming + Live Transcription</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Kampra AI</h1>
+  <h5>Mic audio → Flask → AssemblyAI → Transcript</h5>
+  <button id="startBtn">Start</button>
+  <button id="stopBtn" disabled>Stop</button>
+
+  <pre id="status"></pre>
+  <div id="transcript" style="border:1px solid #ccc; padding:10px; margin-top:10px; background-color: white; color: purple;">
+    <b>Live Transcript</b><br>
+  </div>
+  </div>
+
+<script>
+let socket;
+let mediaRecorder;
+
+document.getElementById("startBtn").onclick = async () => {
+    socket = new WebSocket(`ws://${window.location.host}/ws`);
+
+    socket.onopen = () => {
+        document.getElementById("status").innerText = "WS connected\n";
+    };
+
+    socket.onmessage = (event) => {
+        console.log("Transcript:", event.data);
+        const data = JSON.parse(event.data);
+        if (data.transcript !== undefined) {
+            document.getElementById("transcript").innerHTML += data.transcript + " ";
+        }
+    };
+
+    socket.onclose = () => {
+        document.getElementById("status").innerText += "WS closed\n";
+    };
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+    document.getElementById("status").innerText += "Microphone access granted\n";
+
+    mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+            e.data.arrayBuffer().then(buf => socket.send(buf));
+            document.getElementById("status").innerText += `Sent chunk: ${e.data.size} bytes\n`;
+        }
+    };
+
+    mediaRecorder.start(250); // send every 250ms
+    document.getElementById("status").innerText += "Recording started\n";
+    document.getElementById("startBtn").disabled = true;
+    document.getElementById("stopBtn").disabled = false;
+};
+
+document.getElementById("stopBtn").onclick = () => {
+    mediaRecorder.stop();
+    socket.close();
+    document.getElementById("status").innerText += "Recording stopped\n";
+    document.getElementById("startBtn").disabled = false;
+    document.getElementById("stopBtn").disabled = true;
+};
+</script>
+</body>
+</html> -->
+
+
+
+
+<!-- day 18, 19, 20 -->
+<!-- <!DOCTYPE html>
+<html>
+<head>
+  <title>Kampra AI - Voice Streaming</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Kampra AI</h1>
+    <h3>Mic is live — I’ll capture your words and respond as you go</h3>
+
+    <button id="mic-btn">
+      <img src="/static/mic.png" alt="Mic Button">
+    </button>
+
+    <pre id="status"></pre>
+
+    <div id="transcript">
+      <b>Live Transcript</b><br>
+    </div>
+
+    <div id="finalTranscript">
+      <b>Final Transcript</b><br>
+    </div>
+  </div>
+
+<script>
+let socket;
+let mediaRecorder;
+let isRecording = false;
+
+document.getElementById("mic-btn").onclick = async () => {
+    if (!isRecording) {
+        // Start Recording
+        socket = new WebSocket(`ws://${window.location.host}/ws`);
+
+        socket.onopen = () => {
+            document.getElementById("status").innerText = "WS connected\n";
+        };
+
+        socket.onmessage = (event) => {
+            console.log("Transcript:", event.data);
+            const data = JSON.parse(event.data);
+
+            if (data.transcript !== undefined) {
+                // Show latest partial transcript (replace instead of append)
+                if (!data.end_of_turn) {
+                    document.getElementById("transcript").innerHTML =
+                        "<b>Live Transcript</b><br>" + data.transcript;
+                }
+
+                // When end of turn is reached → move to final transcript
+                if (data.end_of_turn) {
+                    document.getElementById("finalTranscript").innerHTML +=
+                        data.transcript + "<br>";
+                    // Clear live transcript box for next turn
+                    document.getElementById("transcript").innerHTML =
+                        "<b>Live Transcript</b><br>";
+                }
+            }
+        };
+
+        socket.onclose = () => {
+            document.getElementById("status").innerText += "WS closed\n";
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+        document.getElementById("status").innerText += "Microphone access granted\n";
+
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+                e.data.arrayBuffer().then(buf => socket.send(buf));
+            }
+        };
+
+        mediaRecorder.start(250); // send every 250ms
+        document.getElementById("status").innerText += "Recording started\n";
+        isRecording = true;
+    } else {
+        // Stop Recording
+        mediaRecorder.stop();
+        socket.close();
+        document.getElementById("status").innerText += "Recording stopped\n";
+        isRecording = false;
+    }
+};
+</script>
+</body>
+</html>
+-->
+
+
+
+
+
+
+<!-- day 21 -->
+<!-- <!DOCTYPE html>
+<html>
+<head>
+  <title>Kampra AI - Voice Streaming</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Kampra AI</h1>
+    <h3>Mic is live — I’ll capture your words and respond as you go</h3>
+    <h3>Live Murf audio streaming via WebSockets</h3>
+    <button id="mic-btn">
+      <img src="/static/mic.png" alt="Mic Button">
+    </button>
+
+    <pre id="status"></pre>
+
+    <div id="transcript">
+      <b>Live Transcript</b><br>
+    </div>
+
+    <div id="finalTranscript">
+      <b>Final Transcript</b><br>
+    </div>
+  </div>
+
+<script>
+let socket;
+let mediaRecorder;
+let isRecording = false;
+let audioChunks = [];  // Array to accumulate base64 audio chunks
+
+document.getElementById("mic-btn").onclick = async () => {
+    if (!isRecording) {
+        // Start Recording
+        socket = new WebSocket(`ws://${window.location.host}/ws`);
+
+        socket.onopen = () => {
+            document.getElementById("status").innerText = "WS connected\n";
+        };
+
+        socket.onmessage = (event) => {
+            // console.log("Received message:", event.data);
+            let data;
+            try {
+                data = JSON.parse(event.data);
+            } catch (e) {
+                console.error("Invalid JSON:", event.data);
+                return;
+            }
+
+            if (data.type === "murf_audio") {
+                // Accumulate base64 chunk
+                audioChunks.push(data.audio);
+                // Print acknowledgement
+                console.log("Audio data received: chunk added to array");
+            } else if (data.type === "murf_audio_end") {
+                // Optional: Handle end of audio stream, e.g., reset or process chunks
+                console.log("End of Murf audio stream received");
+                // You could log the full array here if needed: console.log("Accumulated audio chunks:", audioChunks);
+                audioChunks = [];  // Reset for next response
+            } else if (data.transcript !== undefined) {
+                // Show latest partial transcript (replace instead of append)
+                if (!data.end_of_turn) {
+                    document.getElementById("transcript").innerHTML =
+                        "<b>Live Transcript</b><br>" + data.transcript;
+                }
+
+                // When end of turn is reached → move to final transcript
+                if (data.end_of_turn) {
+                    document.getElementById("finalTranscript").innerHTML +=
+                        data.transcript + "<br>";
+                    // Clear live transcript box for next turn
+                    document.getElementById("transcript").innerHTML =
+                        "<b>Live Transcript</b><br>";
+                }
+            }
+        };
+
+        socket.onclose = () => {
+            document.getElementById("status").innerText += "WS closed\n";
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+        document.getElementById("status").innerText += "Microphone access granted\n";
+
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+                e.data.arrayBuffer().then(buf => {
+                  socket.send(buf);
+                });
+            }
+        };
+
+        mediaRecorder.start(250); // send every 250ms
+        document.getElementById("status").innerText += "Recording started\n";
+        isRecording = true;
+    } else {
+        // Stop Recording
+        mediaRecorder.stop();
+        socket.close();
+        document.getElementById("status").innerText += "Recording stopped\n";
+        isRecording = false;
+    }
+};
+</script>
+</body>
+</html> -->
+ 
+
+
+<!-- day 22 -->
+
+<!-- works good -->
+<!-- <!DOCTYPE html>
+<html>
+<head>
+  <title>Kampra AI - Voice Streaming</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Kampra AI</h1>
+    <h3>Live Murf audio streaming via WebSockets</h3>
+    <button id="mic-btn">
+      <img src="/static/mic.png" alt="Mic Button">
+    </button>
+
+    <pre id="status"></pre>
+
+    <div id="transcript"><b>Live Transcript</b><br></div>
+    <div id="finalTranscript"><b>Final Transcript</b><br></div>
+
+    <audio id="murfPlayer" controls style="display:none"></audio>
+  </div>
+
+<script>
+let socket;
+let mediaRecorder;
+let isRecording = false;
+let collectedChunks = [];  
+
+document.getElementById("mic-btn").onclick = async () => {
+    if (!isRecording) {
+        socket = new WebSocket(`ws://${window.location.host}/ws`);
+
+        socket.onopen = () => {
+            console.log("🔌 WebSocket OPEN");
+            document.getElementById("status").innerText = "WS connected\n";
+        };
+
+        socket.onmessage = async (event) => {
+            console.log("📩 WS message:", event.data.slice(0,120));
+            let data;
+            try {
+                data = JSON.parse(event.data);
+            } catch (e) {
+                console.error("❌ Invalid JSON:", event.data);
+                return;
+            }
+
+            if (data.type === "murf_audio") {
+                const byteArray = Uint8Array.from(atob(data.audio), c => c.charCodeAt(0));
+                collectedChunks.push(byteArray);
+                console.log("🔊 Murf audio chunk received, size:", byteArray.length);
+
+            } else if (data.type === "murf_audio_end") {
+                console.log("✅ End of Murf audio stream");
+
+                const fullBlob = new Blob(collectedChunks, { type: "audio/mp3" });
+                const fullUrl = URL.createObjectURL(fullBlob);
+
+                const player = document.getElementById("murfPlayer");
+                player.src = fullUrl;
+                player.style.display = "block";
+                player.load();
+                player.play().catch(err => console.warn("⚠️ Play blocked:", err));
+
+                collectedChunks = [];
+            } else if (data.transcript !== undefined) {
+                if (!data.end_of_turn) {
+                    document.getElementById("transcript").innerHTML =
+                        "<b>Live Transcript</b><br>" + data.transcript;
+                }
+                if (data.end_of_turn) {
+                    document.getElementById("finalTranscript").innerHTML +=
+                        data.transcript + "<br>";
+                    document.getElementById("transcript").innerHTML =
+                        "<b>Live Transcript</b><br>";
+                }
+            }
+        };
+
+        socket.onclose = () => {
+            console.log("🔌 WebSocket CLOSED");
+            document.getElementById("status").innerText += "WS closed\n";
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+        console.log("🎤 Mic access granted");
+        document.getElementById("status").innerText += "Microphone access granted\n";
+
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+                e.data.arrayBuffer().then(buf => {
+                  socket.send(buf);
+                });
+            }
+        };
+
+        mediaRecorder.start(250);
+        console.log("🎙️ Recording started");
+        document.getElementById("status").innerText += "Recording started\n";
+        isRecording = true;
+    } else {
+        mediaRecorder.stop();
+        socket.close();
+        console.log("🛑 Recording stopped");
+        document.getElementById("status").innerText += "Recording stopped\n";
+        isRecording = false;
+    }
+};
+</script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- day 22 -->
+<!-- almost correct only problem with the audio player   
+ this is final the above one is not final for day 22-->
+ <!-- <!DOCTYPE html>
+<html>
+<head>
+  <title>Kampra AI - Voice Streaming</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Kampra AI</h1>
+    <h3>Live Murf audio streaming via WebSockets</h3>
+
+    <button id="mic-btn">
+      <img src="/static/mic.png" alt="Mic Button">
+    </button>
+
+    <pre id="status"></pre>
+
+    <div id="transcript">
+      <b>Live Transcript</b><br>
+    </div>
+
+    <div id="finalTranscript">
+      <b>Final Transcript</b><br>
+    </div>
+    <br><br>
+    <audio id="murfPlayer" controls autoplay></audio>
+  </div>
+
+<script>
+let socket, mediaRecorder, isRecording = false;
+let audioQueue = [], mediaSource, sourceBuffer;
+const player = document.getElementById("murfPlayer");
+
+function decodeBase64ToUint8Array(base64) {
+  const binary = atob(base64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+document.getElementById("mic-btn").onclick = async () => {
+  if (!isRecording) {
+    socket = new WebSocket(`ws://${window.location.host}/ws`);
+
+    socket.onopen = () => {
+      console.log("🔌 WebSocket OPEN");
+      document.getElementById("status").innerText = "WS connected\n";
+
+      mediaSource = new MediaSource();
+      player.src = URL.createObjectURL(mediaSource);
+
+      mediaSource.addEventListener("sourceopen", () => {
+        sourceBuffer = mediaSource.addSourceBuffer('audio/mpeg');
+        sourceBuffer.mode = "sequence"; // fix gaps
+
+        sourceBuffer.addEventListener("updateend", () => {
+          if (audioQueue.length > 0 && !sourceBuffer.updating) {
+            sourceBuffer.appendBuffer(audioQueue.shift());
+          }
+        });
+      });
+    };
+
+    socket.onmessage = (event) => {
+      let data;
+      try { data = JSON.parse(event.data); } catch { return; }
+
+      if (data.type === "murf_audio") {
+        // ✅ FIX: append Uint8Array, not .buffer
+        const chunk = decodeBase64ToUint8Array(data.audio);
+        audioQueue.push(chunk);
+
+        if (sourceBuffer && !sourceBuffer.updating && audioQueue.length > 0) {
+          sourceBuffer.appendBuffer(audioQueue.shift());
+        }
+        console.log("🔊 Murf audio chunk received, size:", chunk.length);
+
+      } else if (data.type === "murf_audio_end") {
+        console.log("✅ End of Murf audio stream");
+        if (mediaSource && mediaSource.readyState === "open") {
+          try { mediaSource.endOfStream(); } catch(e) { console.warn(e); }
+        }
+        // player.currentTime = 0;   // ✅ reset so controls work properly
+        // ✅ only reset AFTER playback finishes
+        player.onended = () => {
+          player.currentTime = 0;
+          player.pause()
+  }
+      }
+
+      else if (data.transcript !== undefined) {
+        if (!data.end_of_turn) {
+          document.getElementById("transcript").innerHTML =
+            "<b>Live Transcript</b><br>" + data.transcript;
+        } else {
+          document.getElementById("finalTranscript").innerHTML +=
+            data.transcript + "<br>";
+          document.getElementById("transcript").innerHTML =
+            "<b>Live Transcript</b><br>";
+        }
+      }
+    };
+
+    socket.onclose = () => {
+      console.log("🔌 WebSocket CLOSED");
+      document.getElementById("status").innerText += "WS closed\n";
+    };
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+    console.log("🎤 Mic access granted");
+    document.getElementById("status").innerText += "Microphone access granted\n";
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+        e.data.arrayBuffer().then(buf => {
+          let b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+          socket.send(JSON.stringify({ type: "audio_chunk", data: b64 }));
+        });
+      }
+    };
+
+    mediaRecorder.start(250);
+    console.log("🎙️ Recording started");
+    document.getElementById("status").innerText += "Recording started\n";
+    isRecording = true;
+
+  } else {
+    mediaRecorder.stop();
+    console.log("🛑 Recording stopped");
+    document.getElementById("status").innerText += "Recording stopped\n";
+    isRecording = false;
+  }
+};
+</script>
+</body>
+</html>  -->
+
+
+
+
+
+<!-- day 23 -->
+<!-- 
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Kampra AI - Voice Streaming</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🎙️Kampra AI</h1>
+    <h3>The future of talking with AI starts here.</h3>
+
+    <button id="mic-btn">
+      <img src="/static/mic.png" alt="Mic Button">
+    </button>
+    <pre id="status">Ready</pre>
+
+    // Chat transcript area 
+    <div class="chat" id="chat"></div>
+  </div>
+
+<script>
+const micBtn = document.getElementById("mic-btn");
+let socket = null;
+let mediaRecorder = null;
+let isRecording = false;
+
+
+// Buffer Murf base64 chunks per turn; we merge + play when we see murf_audio_end
+let murfChunks = [];
+let turnIndex = 1;     // for console grouping like your screenshot
+let chunkCount = 0;    // per-turn chunk counter
+
+function setStatus(s) {
+  const st = document.getElementById("status");
+  st.innerText = s;  // REPLACE, do not append (prevents clutter in UI)
+}
+
+function appendMessage(who, text) {
+  const chat = document.getElementById("chat");
+  const div = document.createElement("div");
+  div.className = who === "You" ? "msg you" : "msg ai";
+  const label = document.createElement("div");
+  label.className = "label";
+  label.innerText = who + ":";
+  const body = document.createElement("div");
+  body.innerText = text;
+  div.appendChild(label);
+  div.appendChild(body);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function playMurfAudioFromChunks() {
+  if (murfChunks.length === 0) {
+    console.warn("⚠️ No Murf audio chunks to play!");
+    return;
+  }
+
+  let totalLen = 0;
+  const arrays = murfChunks.map((b64) => {
+    const raw = atob(b64);
+    const arr = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    totalLen += arr.length;
+    return arr;
+  });
+
+  console.log(`🎶 Merging ${murfChunks.length} chunks (${totalLen} bytes)`);
+
+  const merged = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const a of arrays) {
+    merged.set(a, offset);
+    offset += a.length;
+  }
+  murfChunks = []; // clear for next turn
+  // chunkCount = 0;  // reset counter
+
+  const blob = new Blob(arrays, { type: "audio/mpeg" });  // use the arrays directly
+  const url = URL.createObjectURL(blob);
+  
+  const audio = new Audio(url);
+  audio.oncanplaythrough = () => {
+  audio.play()
+  .then(() => console.log("🎧 Murf audio playing"))
+  .catch(e => console.error("❌ Autoplay blocked:", e));
+  };
+
+  audio.onended = () => {
+    console.log("✅ Murf audio finished");
+    URL.revokeObjectURL(url);
+  };
+}
+
+micBtn.onclick = async () => {
+  if (!isRecording) {
+    socket = new WebSocket(`ws://${window.location.host}/ws`);
+
+    socket.onopen = () => {
+      // Console shows OPEN; UI shows recording started (single line, replaced)
+      console.log("🔌 WebSocket OPEN");
+      setStatus("🎤 Mic recording started");
+      micBtn.classList.add("active");   // 🔥 add pulse effect
+    };
+
+    socket.onmessage = (event) => {
+      let data;
+      try { data = JSON.parse(event.data); } catch (e) { return; }
+
+      // AssemblyAI transcript messages forwarded (interim/final)
+      if (data.transcript !== undefined) {
+        if (data.end_of_turn) {
+          appendMessage("You", data.transcript);
+          setStatus("📝 Transcript received");
+        }
+      }
+
+      // Gemini text reply (server sends this)
+      else if (data.type === "gemini_response" && data.text) {
+        appendMessage("Kampra AI", data.text);
+        setStatus("🤖 Gemini responded");
+      }
+
+      // Murf streaming chunks -> buffer + console log like your screenshot
+      else if (data.type === "murf_audio") {
+        murfChunks.push(data.audio);
+        // setStatus(`🔊 Receiving Murf audio chunk (${murfChunks.length})`);
+        setStatus(`🔊 Receiving Murf audio chunk`);
+
+        // Browser console logs similar to your screenshot
+        console.log(`🎵 Received audio chunk for turn ${turnIndex}`);
+        console.log(`🔹 Chunk size: ${data.audio.length} base64 characters`);
+        console.log("🔸 Final chunk: false");
+        ++chunkCount;
+        console.log(`✅ Audio chunk ${chunkCount} acknowledged and accumulated`);
+        console.log(`📦 Total chunks accumulated: ${chunkCount}`);
+      }
+
+      // End of Murf streaming for this turn -> merge and play, set UI back to Ready
+      else if (data.type === "murf_audio_end") {
+        setStatus("🎧 Playing Murf audio");
+        console.log(`🏁 Final chunk: true (turn ${turnIndex})`);
+        murfAudioReceived = false;
+        playMurfAudioFromChunks();
+        // turnIndex += 1; // next turn
+         // status line resets after audio finished arriving
+      }
+    };
+
+    socket.onclose = () => {
+      console.log("🔌 WebSocket CLOSED");
+      setStatus("Ready");
+      micBtn.classList.remove("active");   // remove pulse effect
+    };
+
+
+
+    // start mic -> MediaRecorder (webm chunks)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0 && socket && socket.readyState === WebSocket.OPEN) {
+          e.data.arrayBuffer().then((buf) => {
+            const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+            socket.send(JSON.stringify({ type: "audio_chunk", data: b64 }));
+          });
+        }
+      };
+
+      mediaRecorder.start(250);
+      // UI already shows "🎤 Mic recording started"
+      console.log("🎤 Mic recording started");
+      isRecording = true;
+    } catch (e) {
+      console.error("Mic error:", e);
+      setStatus("❌ Mic error: " + e.message);
+    }
+  } else {
+    // 🔴 STOP mic recording + socket
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      console.log("🛑 Recording stopped (sent final audio)");
+      setStatus("🛑 Recording stopped (sent final audio)");
+    }
+
+    if (socket) {
+      socket.close();
+      socket = null;
+    }
+
+    micBtn.classList.remove("active");   // 🔥 stop pulse
+    isRecording = false;
+  }
+};
+</script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+<!-- day24 -->
+<!-- <!DOCTYPE html>
+<html>
+<head>
+  <title>Kampra AI - Voice Streaming</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🎙️Kampra AI</h1>
+    <h3>The future of talking with AI starts here.</h3>
+
+    <button id="mic-btn">
+      <img src="/static/mic.png" alt="Mic Button">
+    </button>
+    <pre id="status">Ready</pre>
+
+    <div class="chat" id="chat"></div>
+  </div>
+
+<script>
+const micBtn = document.getElementById("mic-btn");
+let socket = null;
+let mediaRecorder = null;
+let isRecording = false;
+
+
+// Buffer Murf base64 chunks per turn; we merge + play when we see murf_audio_end
+let murfChunks = [];
+let turnIndex = 1;     // for console grouping like your screenshot
+let chunkCount = 0;    // per-turn chunk counter
+
+function setStatus(s) {
+  const st = document.getElementById("status");
+  st.innerText = s;  // REPLACE, do not append (prevents clutter in UI)
+}
+
+function appendMessage(who, text) {
+  const chat = document.getElementById("chat");
+  const div = document.createElement("div");
+  div.className = who === "You" ? "msg you" : "msg ai";
+  const label = document.createElement("div");
+  label.className = "label";
+  label.innerText = who + ":";
+  const body = document.createElement("div");
+  body.innerText = text;
+  div.appendChild(label);
+  div.appendChild(body);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function playMurfAudioFromChunks() {
+  if (murfChunks.length === 0) {
+    console.warn("⚠️ No Murf audio chunks to play!");
+    return;
+  }
+
+  let totalLen = 0;
+  const arrays = murfChunks.map((b64) => {
+    const raw = atob(b64);
+    const arr = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    totalLen += arr.length;
+    return arr;
+  });
+
+  console.log(`🎶 Merging ${murfChunks.length} chunks (${totalLen} bytes)`);
+
+  const merged = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const a of arrays) {
+    merged.set(a, offset);
+    offset += a.length;
+  }
+  murfChunks = []; // clear for next turn
+  // chunkCount = 0;  // reset counter
+
+  const blob = new Blob(arrays, { type: "audio/mpeg" });  // use the arrays directly
+  const url = URL.createObjectURL(blob);
+  
+  const audio = new Audio(url);
+  audio.oncanplaythrough = () => {
+  audio.play()
+  .then(() => console.log("🎧 Murf audio playing"))
+  .catch(e => console.error("❌ Autoplay blocked:", e));
+  };
+
+  audio.onended = () => {
+    console.log("✅ Murf audio finished");
+    URL.revokeObjectURL(url);
+  };
+}
+
+micBtn.onclick = async () => {
+  if (!isRecording) {
+    socket = new WebSocket(`ws://${window.location.host}/ws`);
+
+    socket.onopen = () => {
+      // Console shows OPEN; UI shows recording started (single line, replaced)
+      console.log("🔌 WebSocket OPEN");
+      setStatus("🎤 Mic recording started");
+      micBtn.classList.add("active");   // 🔥 add pulse effect
+    };
+
+    socket.onmessage = (event) => {
+      let data;
+      try { data = JSON.parse(event.data); } catch (e) { return; }
+
+      // AssemblyAI transcript messages forwarded (interim/final)
+      if (data.transcript !== undefined) {
+        if (data.end_of_turn) {
+          appendMessage("You", data.transcript);
+          setStatus("📝 Transcript received");
+        }
+      }
+
+      // Gemini text reply (server sends this)
+      else if (data.type === "gemini_response" && data.text) {
+        appendMessage("Captain", data.text);
+        setStatus("🤖 Gemini responded");
+      }
+
+      // Murf streaming chunks -> buffer + console log like your screenshot
+      else if (data.type === "murf_audio") {
+        murfChunks.push(data.audio);
+        // setStatus(`🔊 Receiving Murf audio chunk (${murfChunks.length})`);
+        setStatus(`🔊 Receiving Murf audio chunk`);
+
+        // Browser console logs similar to your screenshot
+        console.log(`🎵 Received audio chunk for turn ${turnIndex}`);
+        console.log(`🔹 Chunk size: ${data.audio.length} base64 characters`);
+        console.log("🔸 Final chunk: false");
+        ++chunkCount;
+        console.log(`✅ Audio chunk ${chunkCount} acknowledged and accumulated`);
+        console.log(`📦 Total chunks accumulated: ${chunkCount}`);
+      }
+
+      // End of Murf streaming for this turn -> merge and play, set UI back to Ready
+      else if (data.type === "murf_audio_end") {
+        setStatus("🎧 Playing Murf audio");
+        console.log(`🏁 Final chunk: true (turn ${turnIndex})`);
+        murfAudioReceived = false;
+        playMurfAudioFromChunks();
+        // turnIndex += 1; // next turn
+         // status line resets after audio finished arriving
+      }
+    };
+
+    socket.onclose = () => {
+      console.log("🔌 WebSocket CLOSED");
+      setStatus("Ready");
+      micBtn.classList.remove("active");   // remove pulse effect
+    };
+
+
+
+    // start mic -> MediaRecorder (webm chunks)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0 && socket && socket.readyState === WebSocket.OPEN) {
+          e.data.arrayBuffer().then((buf) => {
+            const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+            socket.send(JSON.stringify({ type: "audio_chunk", data: b64 }));
+          });
+        }
+      };
+
+      mediaRecorder.start(250);
+      // UI already shows "🎤 Mic recording started"
+      console.log("🎤 Mic recording started");
+      isRecording = true;
+    } catch (e) {
+      console.error("Mic error:", e);
+      setStatus("❌ Mic error: " + e.message);
+    }
+  } else {
+    // 🔴 STOP mic recording + socket
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      console.log("🛑 Recording stopped (sent final audio)");
+      setStatus("🛑 Recording stopped (sent final audio)");
+    }
+
+    if (socket) {
+      socket.close();
+      socket = null;
+    }
+
+    micBtn.classList.remove("active");   // 🔥 stop pulse
+    isRecording = false;
+  }
+};
+</script>
+</body>
+</html> -->
+
+
+
+
+
+<!-- day25, day26 -->
+<!-- <!DOCTYPE html>
+<html>
+<head>
+  <title>Kampra AI - Voice Streaming</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🎙️Kampra AI</h1>
+    <h3>The future of talking with AI starts here.</h3>
+
+    <button id="mic-btn">
+      <img src="/static/mic.png" alt="Mic Button">
+    </button>
+    <pre id="status">Ready</pre>
+
+    <div class="chat" id="chat"></div>
+  </div>
+
+<script>
+const micBtn = document.getElementById("mic-btn");
+let socket = null;
+let mediaRecorder = null;
+let isRecording = false;
+
+
+// Buffer Murf base64 chunks per turn; we merge + play when we see murf_audio_end
+let murfChunks = [];
+let turnIndex = 1;     // for console grouping like your screenshot
+let chunkCount = 0;    // per-turn chunk counter
+
+function setStatus(s) {
+  const st = document.getElementById("status");
+  st.innerText = s;  // REPLACE, do not append (prevents clutter in UI)
+}
+
+function appendMessage(who, text) {
+  const chat = document.getElementById("chat");
+  const div = document.createElement("div");
+  div.className = who === "You" ? "msg you" : "msg ai";
+  const label = document.createElement("div");
+  label.className = "label";
+  label.innerText = who + ":";
+  const body = document.createElement("div");
+  body.innerText = text;
+  div.appendChild(label);
+  div.appendChild(body);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function playMurfAudioFromChunks() {
+  if (murfChunks.length === 0) {
+    console.warn("⚠️ No Murf audio chunks to play!");
+    return;
+  }
+
+  let totalLen = 0;
+  const arrays = murfChunks.map((b64) => {
+    const raw = atob(b64);
+    const arr = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    totalLen += arr.length;
+    return arr;
+  });
+
+  console.log(`🎶 Merging ${murfChunks.length} chunks (${totalLen} bytes)`);
+
+  const merged = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const a of arrays) {
+    merged.set(a, offset);
+    offset += a.length;
+  }
+  murfChunks = []; // clear for next turn
+  // chunkCount = 0;  // reset counter
+
+  const blob = new Blob(arrays, { type: "audio/mpeg" });  // use the arrays directly
+  const url = URL.createObjectURL(blob);
+  
+  const audio = new Audio(url);
+  audio.oncanplaythrough = () => {
+  audio.play()
+  .then(() => console.log("🎧 Murf audio playing"))
+  .catch(e => console.error("❌ Autoplay blocked:", e));
+  };
+
+  audio.onended = () => {
+    console.log("✅ Murf audio finished");
+    URL.revokeObjectURL(url);
+  };
+}
+
+micBtn.onclick = async () => {
+  if (!isRecording) {
+    socket = new WebSocket(`ws://${window.location.host}/ws`);
+
+    socket.onopen = () => {
+      // Console shows OPEN; UI shows recording started (single line, replaced)
+      console.log("🔌 WebSocket OPEN");
+      setStatus("🎤 Mic recording started");
+      micBtn.classList.add("active");   // 🔥 add pulse effect
+    };
+
+    socket.onmessage = (event) => {
+      let data;
+      try { data = JSON.parse(event.data); } catch (e) { return; }
+
+      // AssemblyAI transcript messages forwarded (interim/final)
+      if (data.transcript !== undefined) {
+        if (data.end_of_turn) {
+          appendMessage("You", data.transcript);
+          setStatus("📝 Transcript received");
+        }
+      }
+
+      // Gemini text reply (server sends this)
+      else if (data.type === "gemini_response" && data.text) {
+        appendMessage("Captain", data.text);
+        setStatus("🤖 Gemini responded");
+      }
+
+      // Murf streaming chunks -> buffer + console log like your screenshot
+      else if (data.type === "murf_audio") {
+        murfChunks.push(data.audio);
+        // setStatus(`🔊 Receiving Murf audio chunk (${murfChunks.length})`);
+        setStatus(`🔊 Receiving Murf audio chunk`);
+
+        // Browser console logs similar to your screenshot
+        console.log(`🎵 Received audio chunk for turn ${turnIndex}`);
+        console.log(`🔹 Chunk size: ${data.audio.length} base64 characters`);
+        console.log("🔸 Final chunk: false");
+        ++chunkCount;
+        console.log(`✅ Audio chunk ${chunkCount} acknowledged and accumulated`);
+        console.log(`📦 Total chunks accumulated: ${chunkCount}`);
+      }
+
+      // End of Murf streaming for this turn -> merge and play, set UI back to Ready
+      else if (data.type === "murf_audio_end") {
+        setStatus("🎧 Playing Murf audio");
+        console.log(`🏁 Final chunk: true (turn ${turnIndex})`);
+        murfAudioReceived = false;
+        playMurfAudioFromChunks();
+        // turnIndex += 1; // next turn
+         // status line resets after audio finished arriving
+      }
+    };
+
+    socket.onclose = () => {
+      console.log("🔌 WebSocket CLOSED");
+      setStatus("Ready");
+      micBtn.classList.remove("active");   // remove pulse effect
+    };
+
+
+
+    // start mic -> MediaRecorder (webm chunks)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0 && socket && socket.readyState === WebSocket.OPEN) {
+          e.data.arrayBuffer().then((buf) => {
+            const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+            socket.send(JSON.stringify({ type: "audio_chunk", data: b64 }));
+          });
+        }
+      };
+
+      mediaRecorder.start(250);
+      // UI already shows "🎤 Mic recording started"
+      console.log("🎤 Mic recording started");
+      isRecording = true;
+    } catch (e) {
+      console.error("Mic error:", e);
+      setStatus("❌ Mic error: " + e.message);
+    }
+  } else {
+    // 🔴 STOP mic recording + socket
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      console.log("🛑 Recording stopped (sent final audio)");
+      setStatus("🛑 Recording stopped (sent final audio)");
+    }
+
+    if (socket) {
+      socket.close();
+      socket = null;
+    }
+
+    micBtn.classList.remove("active");   // 🔥 stop pulse
+    isRecording = false;
+  }
+};
+</script>
+</body>
+</html> 
+ -->
+
+
+
+
+
+
+
+<!-- day 27 -->
+ <!-- <!DOCTYPE html>
+<html>
+<head>
+  <title>Kampra AI - Voice Streaming</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <div class="container">
+  <header>
+    <h1>🎙️Kampra AI</h1>
+    <h3>The future of talking with AI starts here.</h3>
+
+    <button id="settingsBtn">⚙️</button>
+  </header>
+
+  // Modal Form 
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <span id="closeModal" class="close">&times;</span>
+      <h2>🔑 API Keys</h2>
+      <form id="apiKeyForm">
+        <label>Murf API Key:</label>
+        <input type="text" name="MURF_KEY" value="{{ config['MURF_KEY'] }}"><br>
+
+        <label>Gemini API Key:</label>
+        <input type="text" name="GEMINI_KEY" value="{{ config['GEMINI_KEY'] }}"><br>
+
+        <label>Assembly API Key:</label>
+        <input type="text" name="ASSEMBLY_KEY" value="{{ config['ASSEMBLY_KEY'] }}"><br>
+
+        <label>Weather API Key:</label>
+        <input type="text" name="WEATHER_KEY" value="{{ config['WEATHER_KEY'] }}"><br>
+
+        <label>Moon API Key:</label>
+        <input type="text" name="MOON_KEY" value="{{ config['MOON_KEY'] }}"><br>
+
+        <label>Horoscope API Key:</label>
+        <input type="text" name="HOROSCOPE_KEY" value="{{ config['HOROSCOPE_KEY'] }}"><br>
+
+        <button type="submit">💾 Save</button>
+      </form>
+    </div>
+  </div>
+
+    <button id="mic-btn">
+      <img src="/static/mic.png" alt="Mic Button">
+    </button>
+    <pre id="status">Ready</pre>
+
+    <div class="chat" id="chat"></div>
+  </div>
+
+<script>
+const micBtn = document.getElementById("mic-btn");
+let socket = null;
+let mediaRecorder = null;
+let isRecording = false;
+
+
+    // Modal logic
+    const modal = document.getElementById("settingsModal");
+    const btn = document.getElementById("settingsBtn");
+    const span = document.getElementById("closeModal");
+
+    btn.onclick = () => modal.style.display = "block";
+    span.onclick = () => modal.style.display = "none";
+    window.onclick = (event) => {
+      if (event.target === modal) modal.style.display = "none";
+    }
+
+    // Save keys
+    document.getElementById("apiKeyForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const keys = {};
+      formData.forEach((value, key) => keys[key] = value);
+
+      const res = await fetch("/save_keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(keys)
+      });
+
+      const data = await res.json();
+      alert(data.message);
+      modal.style.display = "none";
+    });
+
+
+
+// Buffer Murf base64 chunks per turn; we merge + play when we see murf_audio_end
+let murfChunks = [];
+let turnIndex = 1;     // for console grouping like your screenshot
+let chunkCount = 0;    // per-turn chunk counter
+
+function setStatus(s) {
+  const st = document.getElementById("status");
+  st.innerText = s;  // REPLACE, do not append (prevents clutter in UI)
+}
+
+function appendMessage(who, text) {
+  const chat = document.getElementById("chat");
+  const div = document.createElement("div");
+  div.className = who === "You" ? "msg you" : "msg ai";
+  const label = document.createElement("div");
+  label.className = "label";
+  label.innerText = who + ":";
+  const body = document.createElement("div");
+  body.innerText = text;
+  div.appendChild(label);
+  div.appendChild(body);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function playMurfAudioFromChunks() {
+  if (murfChunks.length === 0) {
+    console.warn("⚠️ No Murf audio chunks to play!");
+    return;
+  }
+
+  let totalLen = 0;
+  const arrays = murfChunks.map((b64) => {
+    const raw = atob(b64);
+    const arr = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    totalLen += arr.length;
+    return arr;
+  });
+
+  console.log(`🎶 Merging ${murfChunks.length} chunks (${totalLen} bytes)`);
+
+  const merged = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const a of arrays) {
+    merged.set(a, offset);
+    offset += a.length;
+  }
+  murfChunks = []; // clear for next turn
+  // chunkCount = 0;  // reset counter
+
+  const blob = new Blob(arrays, { type: "audio/mpeg" });  // use the arrays directly
+  const url = URL.createObjectURL(blob);
+  
+  const audio = new Audio(url);
+  audio.oncanplaythrough = () => {
+  audio.play()
+  .then(() => console.log("🎧 Murf audio playing"))
+  .catch(e => console.error("❌ Autoplay blocked:", e));
+  };
+
+  audio.onended = () => {
+    console.log("✅ Murf audio finished");
+    URL.revokeObjectURL(url);
+  };
+}
+
+micBtn.onclick = async () => {
+  if (!isRecording) {
+    socket = new WebSocket(`ws://${window.location.host}/ws`);
+
+    socket.onopen = () => {
+      // Console shows OPEN; UI shows recording started (single line, replaced)
+      console.log("🔌 WebSocket OPEN");
+      setStatus("🎤 Mic recording started");
+      micBtn.classList.add("active");   // 🔥 add pulse effect
+    };
+
+    socket.onmessage = (event) => {
+      let data;
+      try { data = JSON.parse(event.data); } catch (e) { return; }
+
+      // AssemblyAI transcript messages forwarded (interim/final)
+      if (data.transcript !== undefined) {
+        if (data.end_of_turn) {
+          appendMessage("You", data.transcript);
+          setStatus("📝 Transcript received");
+        }
+      }
+
+      // Gemini text reply (server sends this)
+      else if (data.type === "gemini_response" && data.text) {
+        appendMessage("Captain", data.text);
+        setStatus("🤖 Gemini responded");
+      }
+
+      // Murf streaming chunks -> buffer + console log like your screenshot
+      else if (data.type === "murf_audio") {
+        murfChunks.push(data.audio);
+        // setStatus(`🔊 Receiving Murf audio chunk (${murfChunks.length})`);
+        setStatus(`🔊 Receiving Murf audio chunk`);
+
+        // Browser console logs similar to your screenshot
+        console.log(`🎵 Received audio chunk for turn ${turnIndex}`);
+        console.log(`🔹 Chunk size: ${data.audio.length} base64 characters`);
+        console.log("🔸 Final chunk: false");
+        ++chunkCount;
+        console.log(`✅ Audio chunk ${chunkCount} acknowledged and accumulated`);
+        console.log(`📦 Total chunks accumulated: ${chunkCount}`);
+      }
+
+      // End of Murf streaming for this turn -> merge and play, set UI back to Ready
+      else if (data.type === "murf_audio_end") {
+        setStatus("🎧 Playing Murf audio");
+        console.log(`🏁 Final chunk: true (turn ${turnIndex})`);
+        murfAudioReceived = false;
+        playMurfAudioFromChunks();
+        // turnIndex += 1; // next turn
+         // status line resets after audio finished arriving
+      }
+    };
+
+    socket.onclose = () => {
+      console.log("🔌 WebSocket CLOSED");
+      setStatus("Ready");
+      micBtn.classList.remove("active");   // remove pulse effect
+    };
+
+
+
+    // start mic -> MediaRecorder (webm chunks)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0 && socket && socket.readyState === WebSocket.OPEN) {
+          e.data.arrayBuffer().then((buf) => {
+            const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+            socket.send(JSON.stringify({ type: "audio_chunk", data: b64 }));
+          });
+        }
+      };
+
+      mediaRecorder.start(250);
+      // UI already shows "🎤 Mic recording started"
+      console.log("🎤 Mic recording started");
+      isRecording = true;
+    } catch (e) {
+      console.error("Mic error:", e);
+      setStatus("❌ Mic error: " + e.message);
+    }
+  } else {
+    // 🔴 STOP mic recording + socket
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      console.log("🛑 Recording stopped (sent final audio)");
+      setStatus("🛑 Recording stopped (sent final audio)");
+    }
+
+    if (socket) {
+      socket.close();
+      socket = null;
+    }
+
+    micBtn.classList.remove("active");   // 🔥 stop pulse
+    isRecording = false;
+  }
+};
+</script>
+</body>
+</html>  -->
+
+
+
+
+
+
+
+
+
+<!-- 
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Kampra AI - Voice Streaming</title>
+  <link rel="stylesheet" href="/static/style1.css">
+</head>
+<body>
+
+  <div class="container">
+  <header>
+    <h1>🎙️Kampra AI</h1>
+    <h3>The future of talking with AI starts here.</h3>
+
+    <button id="settingsBtn">⚙️</button>
+  </header>
+
+      <div class="chat" id="chat"></div>
+
+
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <span id="closeModal" class="close">&times;</span>
+      <h2>🔑 API Keys</h2>
+      <form id="apiKeyForm">
+        <label>Murf API Key:</label>
+        <input type="password" name="MURF_KEY" value="{{ config['MURF_KEY'] }}"><br>
+
+        <label>Gemini API Key:</label>
+        <input type="password" name="GEMINI_KEY" value="{{ config['GEMINI_KEY'] }}"><br>
+
+        <label>Assembly API Key:</label>
+        <input type="password" name="ASSEMBLY_KEY" value="{{ config['ASSEMBLY_KEY'] }}"><br>
+
+        <label>Weather API Key:</label>
+        <input type="password" name="WEATHER_KEY" value="{{ config['WEATHER_KEY'] }}"><br>
+
+        <label>Moon API Key:</label>
+        <input type="password" name="MOON_KEY" value="{{ config['MOON_KEY'] }}"><br>
+
+        <label>Horoscope API Key:</label>
+        <input type="password" name="HOROSCOPE_KEY" value="{{ config['HOROSCOPE_KEY'] }}"><br>
+
+        <button type="submit">💾 Save</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="text-input-area">
+    <textarea id="userText" placeholder="Type your message..."></textarea>
+    <button id="sendText"  type="button">
+      <img src="/static/message.png" alt="Message Button">
+  </button>
+      <button id="mic-btn"  type="button">
+    <img src="/static/mic.png" alt="Mic Button">
+  </button>
+  </div>
+
+
+
+    <pre id="status">Ready</pre>
+
+  </div>
+
+
+<script>
+const micBtn = document.getElementById("mic-btn");
+let socket = null;
+let mediaRecorder = null;
+let isRecording = false;
+
+  // Auto-grow the input box like ChatGPT
+  const _uxTxt = document.getElementById('userText');
+  if (_uxTxt) {
+    const baseH = 40; // must match CSS min-height
+    const grow = () => {
+      _uxTxt.style.height = baseH + 'px';        // reset
+      _uxTxt.style.height = _uxTxt.scrollHeight + 'px'; // grow to content
+    };
+    _uxTxt.addEventListener('input', grow);
+    // initialize once
+    grow();
+  }
+
+
+
+
+// --------------------
+// Open WebSocket on page load (shared for mic + text)
+// --------------------
+window.addEventListener("load", () => {
+  socket = new WebSocket(`ws://${window.location.host}/ws`);
+
+  socket.onopen = () => {
+    // Console shows OPEN; UI shows "Ready"
+    console.log("🔌 WebSocket OPEN (page load)");
+    setStatus("Ready (connected)");
+  };
+
+  socket.onclose = () => {
+    console.log("🔌 WebSocket CLOSED");
+    setStatus("❌ Disconnected");
+  };
+
+  socket.onmessage = (event) => {
+    let data;
+    try { 
+      data = JSON.parse(event.data);
+    } catch (e) {
+      console.error("⚠ Bad WS message:", event.data);
+      return; 
+    }
+
+    // AssemblyAI transcript messages forwarded (interim/final)
+    if (data.transcript !== undefined) {
+      if (data.end_of_turn) {
+        appendMessage("You", data.transcript);
+        setStatus("📝 Transcript received");
+      }
+    }
+
+    // Gemini text reply (server sends this)
+    else if (data.type === "gemini_response" && data.text) {
+      appendMessage("Captain", data.text);
+      setStatus("🤖 Gemini responded");
+    }
+
+    // Murf streaming chunks -> buffer + console log like your screenshot
+    else if (data.type === "murf_audio") {
+      murfChunks.push(data.audio);
+      // setStatus(`🔊 Receiving Murf audio chunk (${murfChunks.length})`);
+      setStatus(`🔊 Receiving Murf audio chunk`);
+
+      // Browser console logs similar to your screenshot
+      console.log(`🎵 Received audio chunk for turn ${turnIndex}`);
+      console.log(`🔹 Chunk size: ${data.audio.length} base64 characters`);
+      console.log("🔸 Final chunk: false");
+      ++chunkCount;
+      console.log(`✅ Audio chunk ${chunkCount} acknowledged and accumulated`);
+      console.log(`📦 Total chunks accumulated: ${chunkCount}`);
+    }
+
+    // End of Murf streaming for this turn -> merge and play, set UI back to Ready
+    else if (data.type === "murf_audio_end") {
+      setStatus("🎧 Playing Murf audio");
+      console.log(`🏁 Final chunk: true (turn ${turnIndex})`);
+      playMurfAudioFromChunks();
+      // turnIndex += 1; // next turn
+       // status line resets after audio finished arriving
+    }
+
+   // === 5. Unknown message (debug) ===
+    else {
+      console.log("ℹ Unknown WS message:", data);
+    }
+  };
+});
+
+
+// --------------------
+// Modal logic
+// --------------------
+const modal = document.getElementById("settingsModal");
+const btn = document.getElementById("settingsBtn");
+const span = document.getElementById("closeModal");
+
+btn.onclick = () => modal.style.display = "block";
+span.onclick = () => modal.style.display = "none";
+window.onclick = (event) => {
+  if (event.target === modal) modal.style.display = "none";
+}
+
+// Save keys
+document.getElementById("apiKeyForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const keys = {};
+  formData.forEach((value, key) => keys[key] = value);
+
+  const res = await fetch("/save_keys", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(keys)
+  });
+
+  const data = await res.json();
+  alert(data.message);
+  modal.style.display = "none";
+});
+
+
+// --------------------
+// Text input handlers
+// --------------------
+document.getElementById("sendText").addEventListener("click", sendTextToAI);
+document.getElementById("userText").addEventListener("keypress", function(e) {
+  if (e.key === "Enter") {
+    sendTextToAI();
+  }
+});
+
+function sendTextToAI() {
+  const input = document.getElementById("userText");
+  const message = input.value.trim();
+  if (message === "") return;
+
+  console.log("📨 Sending typed text:", message);  // Debug log
+
+
+  // Clear input
+  input.value = "";
+
+  // 🚀 Now use our new handler
+  handleFinalTranscript(message);
+}
+
+// Attach handlers after page loads
+window.addEventListener("load", () => {
+  const sendBtn = document.getElementById("sendText");
+  const input = document.getElementById("userText");
+
+  // Click button -> send typed text
+  sendBtn.addEventListener("click", sendTextToAI);
+
+  // Press Enter in textarea -> send typed text
+  input.addEventListener("keypress", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();  // prevent newline
+      sendTextToAI();
+    }
+  });
+});
+
+// --------------------
+// Buffer Murf base64 chunks per turn; we merge + play when we see murf_audio_end
+// --------------------
+let murfChunks = [];
+let turnIndex = 1;     // for console grouping like your screenshot
+let chunkCount = 0;    // per-turn chunk counter
+
+function setStatus(s) {
+  const st = document.getElementById("status");
+  st.innerText = s;  // REPLACE, do not append (prevents clutter in UI)
+}
+
+function appendMessage(who, text) {
+  const chat = document.getElementById("chat");
+  const div = document.createElement("div");
+  div.className = who === "You" ? "msg you" : "msg ai";
+  const label = document.createElement("div");
+  label.className = "label";
+  label.innerText = who + ":";
+  const body = document.createElement("div");
+  body.innerText = text;
+  div.appendChild(label);
+  div.appendChild(body);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function playMurfAudioFromChunks() {
+  if (murfChunks.length === 0) {
+    console.warn("⚠️ No Murf audio chunks to play!");
+    return;
+  }
+
+  let totalLen = 0;
+  const arrays = murfChunks.map((b64) => {
+    const raw = atob(b64);
+    const arr = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    totalLen += arr.length;
+    return arr;
+  });
+
+  console.log(`🎶 Merging ${murfChunks.length} chunks (${totalLen} bytes)`);
+
+  const merged = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const a of arrays) {
+    merged.set(a, offset);
+    offset += a.length;
+  }
+  murfChunks = []; // clear for next turn
+
+  const blob = new Blob(arrays, { type: "audio/mpeg" });  // use the arrays directly
+  const url = URL.createObjectURL(blob);
+  
+  const audio = new Audio(url);
+  audio.oncanplaythrough = () => {
+    audio.play()
+    .then(() => console.log("🎧 Murf audio playing"))
+    .catch(e => console.error("❌ Autoplay blocked:", e));
+  };
+
+  audio.onended = () => {
+    console.log("✅ Murf audio finished");
+    URL.revokeObjectURL(url);
+  };
+}
+
+
+// --------------------
+// Text -> WebSocket
+// --------------------
+function handleFinalTranscript(text) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    console.warn("⚠️ WebSocket not open. Cannot send text to AI.");
+    setStatus("❌ Connection not open");
+    return;
+  }
+
+  // Show in chat like mic transcript
+  appendMessage("You", text);
+
+  // Send typed text to backend as if it was a transcript
+  socket.send(JSON.stringify({
+    type: "user_text",
+    text: text
+  }));
+
+  setStatus("📨 Sent typed text to AI");
+}
+
+
+// --------------------
+// Mic button
+// --------------------
+micBtn.onclick = async () => {
+  if (!isRecording) {
+    // start mic -> MediaRecorder (webm chunks)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0 && socket && socket.readyState === WebSocket.OPEN) {
+          e.data.arrayBuffer().then((buf) => {
+            const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+            socket.send(JSON.stringify({ type: "audio_chunk", data: b64 }));
+          });
+        }
+      };
+
+      mediaRecorder.start(250);
+      // UI already shows "🎤 Mic recording started"
+      console.log("🎤 Mic recording started");
+      setStatus("🎤 Mic recording started");
+      micBtn.classList.add("active");   // 🔥 add pulse effect
+      isRecording = true;
+    } catch (e) {
+      console.error("Mic error:", e);
+      setStatus("❌ Mic error: " + e.message);
+    }
+  } else {
+    // 🔴 STOP mic recording
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      console.log("🛑 Recording stopped (sent final audio)");
+      setStatus("🛑 Recording stopped (sent final audio)");
+    }
+
+    micBtn.classList.remove("active");   // 🔥 stop pulse
+    isRecording = false;
+  }
+};
+</script>
+
+
+</body>
+</html>  -->
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Kampra AI - Voice Streaming</title>
+  <link rel="stylesheet" href="/static/style1.css">
+</head>
+<body>
+
+  <div class="container">
+  <header>
+    <h1>🎙️Kampra AI</h1>
+    <h3>The future of talking with AI starts here.</h3>
+
+    <button id="settingsBtn">⚙️</button>
+  </header>
+
+      <div class="chat" id="chat"></div>
+
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <span id="closeModal" class="close">&times;</span>
+      <h2>🔑 API Keys</h2>
+      <form id="apiKeyForm">
+        <label>Murf API Key:</label>
+        <input type="password" name="MURF_KEY" value="{{ config['MURF_KEY'] }}"><br>
+
+        <label>Gemini API Key:</label>
+        <input type="password" name="GEMINI_KEY" value="{{ config['GEMINI_KEY'] }}"><br>
+
+        <label>Assembly API Key:</label>
+        <input type="password" name="ASSEMBLY_KEY" value="{{ config['ASSEMBLY_KEY'] }}"><br>
+
+        <label>Weather API Key:</label>
+        <input type="password" name="WEATHER_KEY" value="{{ config['WEATHER_KEY'] }}"><br>
+
+        <label>Moon API Key:</label>
+        <input type="password" name="MOON_KEY" value="{{ config['MOON_KEY'] }}"><br>
+
+        <label>Horoscope API Key:</label>
+        <input type="password" name="HOROSCOPE_KEY" value="{{ config['HOROSCOPE_KEY'] }}"><br>
+
+        <button type="submit">💾 Save</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Removed text input area entirely -->
+  <!-- <div class="text-input-area"> ... </div> -->
+
+  <button id="mic-btn"  type="button">
+    <img src="/static/mic.png" alt="Mic Button">
+  </button>
+
+  <pre id="status">Ready</pre>
+
+  </div>
+
+
+<script>
+const micBtn = document.getElementById("mic-btn");
+let socket = null;
+let mediaRecorder = null;
+let isRecording = false;
+
+// --------------------
+// Open WebSocket on page load
+// --------------------
+window.addEventListener("load", () => {
+  socket = new WebSocket(`ws://${window.location.host}/ws`);
+
+  socket.onopen = () => {
+    console.log("🔌 WebSocket OPEN (page load)");
+    setStatus("Ready (connected)");
+  };
+
+  socket.onclose = () => {
+    console.log("🔌 WebSocket CLOSED");
+    setStatus("❌ Disconnected");
+  };
+
+  socket.onmessage = (event) => {
+    let data;
+    try { 
+      data = JSON.parse(event.data);
+    } catch (e) {
+      console.error("⚠ Bad WS message:", event.data);
+      return; 
+    }
+
+    if (data.transcript !== undefined) {
+      if (data.end_of_turn) {
+        appendMessage("You", data.transcript);
+        setStatus("📝 Transcript received");
+      }
+    }
+    else if (data.type === "gemini_response" && data.text) {
+      appendMessage("Captain", data.text);
+      setStatus("🤖 Gemini responded");
+    }
+    else if (data.type === "murf_audio") {
+      murfChunks.push(data.audio);
+      setStatus(`🔊 Receiving Murf audio chunk`);
+      console.log(`🎵 Received audio chunk for turn ${turnIndex}`);
+      ++chunkCount;
+    }
+    else if (data.type === "murf_audio_end") {
+      setStatus("🎧 Playing Murf audio");
+      playMurfAudioFromChunks();
+    }
+    else {
+      console.log("ℹ Unknown WS message:", data);
+    }
+  };
+});
+
+// --------------------
+// Modal logic
+// --------------------
+const modal = document.getElementById("settingsModal");
+const btn = document.getElementById("settingsBtn");
+const span = document.getElementById("closeModal");
+
+btn.onclick = () => modal.style.display = "block";
+span.onclick = () => modal.style.display = "none";
+window.onclick = (event) => {
+  if (event.target === modal) modal.style.display = "none";
+}
+
+document.getElementById("apiKeyForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const keys = {};
+  formData.forEach((value, key) => keys[key] = value);
+
+  const res = await fetch("http://127.0.0.1:5000/save_keys", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(keys)
+  });
+
+  const data = await res.json();
+  alert(data.message);
+  modal.style.display = "none";
+});
+
+// --------------------
+// Buffer Murf base64 chunks per turn
+// --------------------
+let murfChunks = [];
+let turnIndex = 1;
+let chunkCount = 0;
+
+function setStatus(s) {
+  const st = document.getElementById("status");
+  st.innerText = s;
+}
+
+function appendMessage(who, text) {
+  const chat = document.getElementById("chat");
+  const div = document.createElement("div");
+  div.className = who === "You" ? "msg you" : "msg ai";
+  const label = document.createElement("div");
+  label.className = "label";
+  label.innerText = who + ":";
+  const body = document.createElement("div");
+  body.innerText = text;
+  div.appendChild(label);
+  div.appendChild(body);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function playMurfAudioFromChunks() {
+  if (murfChunks.length === 0) return;
+
+  let totalLen = 0;
+  const arrays = murfChunks.map((b64) => {
+    const raw = atob(b64);
+    const arr = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    totalLen += arr.length;
+    return arr;
+  });
+
+  const merged = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const a of arrays) {
+    merged.set(a, offset);
+    offset += a.length;
+  }
+  murfChunks = [];
+
+  const blob = new Blob(arrays, { type: "audio/mpeg" });
+  const url = URL.createObjectURL(blob);
+
+  const audio = new Audio(url);
+  audio.oncanplaythrough = () => { audio.play(); };
+  audio.onended = () => { URL.revokeObjectURL(url); };
+}
+
+// --------------------
+// Mic button
+// --------------------
+micBtn.onclick = async () => {
+  if (!isRecording) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0 && socket && socket.readyState === WebSocket.OPEN) {
+          e.data.arrayBuffer().then((buf) => {
+            const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+            socket.send(JSON.stringify({ type: "audio_chunk", data: b64 }));
+          });
+        }
+      };
+
+      mediaRecorder.start(250);
+      setStatus("🎤 Mic recording started");
+      micBtn.classList.add("active");
+      isRecording = true;
+    } catch (e) {
+      setStatus("❌ Mic error: " + e.message);
+    }
+  } else {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      console.log("🛑 Recording stopped (sent final audio)");
+      setStatus("🛑 Recording stopped (sent final audio)");
+    }
+    micBtn.classList.remove("active");
+    isRecording = false;
+  }
+};
+</script>
+
+</body>
+</html>
+
