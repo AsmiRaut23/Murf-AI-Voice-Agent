@@ -1980,7 +1980,9 @@ let isRecording = false;
 // Open WebSocket on page load
 // --------------------
 window.addEventListener("load", () => {
-  socket = new WebSocket(`ws://${window.location.host}/ws`);
+  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+  socket = new WebSocket(`${protocol}://${window.location.host}/ws`);
+
 
   socket.onopen = () => {
     console.log("🔌 WebSocket OPEN (page load)");
@@ -2040,10 +2042,10 @@ document.getElementById("apiKeyForm").addEventListener("submit", async (e) => {
   const keys = {};
   formData.forEach((value, key) => keys[key] = value);
 
-  const res = await fetch("http://127.0.0.1:5000/save_keys", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(keys)
+  const res = await fetch("/save_keys", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(keys)
   });
 
   const data = await res.json();
