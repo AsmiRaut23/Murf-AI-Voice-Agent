@@ -1967,8 +1967,6 @@ micBtn.onclick = async () => {
     <img src="/static/mic.png" alt="Mic Button">
   </button>
 
-  <pre id="status">Ready</pre>
-
   </div>
 
 
@@ -1986,12 +1984,10 @@ window.addEventListener("load", () => {
 
   socket.onopen = () => {
     console.log("🔌 WebSocket OPEN (page load)");
-    setStatus("Ready (connected)");
   };
 
   socket.onclose = () => {
     console.log("🔌 WebSocket CLOSED");
-    setStatus("❌ Disconnected");
   };
 
   socket.onmessage = (event) => {
@@ -2006,21 +2002,17 @@ window.addEventListener("load", () => {
     if (data.transcript !== undefined) {
       if (data.end_of_turn) {
         appendMessage("You", data.transcript);
-        setStatus("📝 Transcript received");
       }
     }
     else if (data.type === "gemini_response" && data.text) {
       appendMessage("Captain", data.text);
-      setStatus("🤖 Gemini responded");
     }
     else if (data.type === "murf_audio") {
       murfChunks.push(data.audio);
-      setStatus(`🔊 Receiving Murf audio chunk`);
       console.log(`🎵 Received audio chunk for turn ${turnIndex}`);
       ++chunkCount;
     }
     else if (data.type === "murf_audio_end") {
-      setStatus("🎧 Playing Murf audio");
       playMurfAudioFromChunks();
     }
     else {
@@ -2066,10 +2058,7 @@ let murfChunks = [];
 let turnIndex = 1;
 let chunkCount = 0;
 
-function setStatus(s) {
-  const st = document.getElementById("status");
-  st.innerText = s;
-}
+
 
 function appendMessage(who, text) {
   const chat = document.getElementById("chat");
@@ -2133,17 +2122,15 @@ micBtn.onclick = async () => {
       };
 
       mediaRecorder.start(250);
-      setStatus("🎤 Mic recording started");
       micBtn.classList.add("active");
       isRecording = true;
     } catch (e) {
-      setStatus("❌ Mic error: " + e.message);
+      console.log("❌ Mic error: " + e.message);
     }
   } else {
     if (mediaRecorder && mediaRecorder.state !== "inactive") {
       mediaRecorder.stop();
       console.log("🛑 Recording stopped (sent final audio)");
-      setStatus("🛑 Recording stopped (sent final audio)");
     }
     micBtn.classList.remove("active");
     isRecording = false;

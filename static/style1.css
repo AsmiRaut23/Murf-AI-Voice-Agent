@@ -213,13 +213,3 @@ header h3 {
   color: black;
 }
 
-/* Optional: status text so it doesn't clash with content */
-#status {
-  position: absolute;
-  top: 80px;
-  left: 10px;
-  color: rgba(255,255,255,0.8);
-  font-size: 12px;
-  margin: 0;
-  white-space: pre-wrap;
-}
