@@ -31,5 +31,6 @@ flask-sock==0.6.0
 python-dotenv==1.0.1
 requests==2.32.3
 openai==1.35.13
-murf-ai==0.1.2    # pin to your working version
+#murf-ai==0.1.2    # pin to your working version
 websockets==15.0.1
+
