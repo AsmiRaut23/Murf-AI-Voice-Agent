@@ -5416,7 +5416,7 @@ def get_moon_position():
 
         # Speech-friendly, short pirate style + clear meaning of azimuth
         return (
-            f"Arrr! 🌙 From {city}, {country}, the moon be {altitude}° high, "
+            f"Arrr! 🌙 From your location, the moon be {altitude}° high, "
             f"azimuth {azimuth}° toward {direction}. "
             f"It rises at {rise} and sets at {set_time}. "
             f"Phase be {phase}, 'n distance {distance} km."
