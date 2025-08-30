@@ -5749,7 +5749,13 @@ async def transcribe_realtime(audio_queue, client_send, loop):
 
                         async def process_turn():
                             try:
+                                # Save user transcript
+                                chat_history.append({"role": "user", "text": transcript})
+
                                 llm_text = await stream_llm_response(transcript)
+
+                                # Save AI reply
+                                chat_history.append({"role": "assistant", "text": llm_text})
 
                                 # Send Gemini text
                                 if client_send:
