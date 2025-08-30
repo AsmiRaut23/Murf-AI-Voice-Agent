@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -34,7 +34,7 @@
 
     <div id="chatBox" class="chat-box"></div>
 
-    <!-- hidden player: audio auto-plays -->
+    
     <audio id="responseAudio" style="display:none;"></audio>
   </div>
   
@@ -42,5 +42,63 @@
 
 </body>
 </html>
+ -->
 
+
+
+
+
+ <!DOCTYPE html>
+<html>
+<head>
+  <title>Kampra AI - Voice Streaming</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <!-- <link rel="stylesheet" href="/static/script.js"> -->
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎙️Kampra AI</h1>
+      <h3>The future of talking with AI starts here.</h3>
+      <button id="settingsBtn">⚙️</button>
+    </header>
+
+    <div class="chat" id="chat"></div>
+
+    <div id="settingsModal" class="modal">
+      <div class="modal-content">
+        <span id="closeModal" class="close">&times;</span>
+        <h2>🔑 API Keys</h2>
+        <form id="apiKeyForm">
+          <label>Murf API Key:</label>
+          <input type="password" name="MURF_KEY" value="{{ config['MURF_KEY'] }}"><br>
+
+          <label>Gemini API Key:</label>
+          <input type="password" name="GEMINI_KEY" value="{{ config['GEMINI_KEY'] }}"><br>
+
+          <label>Assembly API Key:</label>
+          <input type="password" name="ASSEMBLY_KEY" value="{{ config['ASSEMBLY_KEY'] }}"><br>
+
+          <label>Weather API Key:</label>
+          <input type="password" name="WEATHER_KEY" value="{{ config['WEATHER_KEY'] }}"><br>
+
+          <label>Moon Tracking API Key:</label>
+          <input type="password" name="MOON_KEY" value="{{ config['MOON_KEY'] }}"><br>
+
+          <label>Horoscope API Key:</label>
+          <input type="password" name="HOROSCOPE_KEY" value="{{ config['HOROSCOPE_KEY'] }}"><br>
+
+          <button type="submit">💾 Save</button>
+        </form>
+      </div>
+    </div>
+
+    <button id="mic-btn" type="button">
+      <img src="/static/mic.png" alt="Mic Button">
+    </button>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
 
