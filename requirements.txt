@@ -6,3 +6,4 @@ openai==1.35.13
 websockets==15.0.1
 # websockets==10.4
 google-generativeai==0.8.3
+assemblyai==0.43.1
