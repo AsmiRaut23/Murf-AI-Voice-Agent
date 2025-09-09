@@ -1,0 +1,579 @@
+/* =========================
+   Base & Reset
+   ========================= */
+body {
+  margin: 0;
+  font-family: "Helvetica", sans-serif;
+  background: #fafafa;
+  height: 100vh;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+}
+
+/* =========================
+   Container
+   ========================= */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  position: relative; 
+  overflow: hidden;
+
+  /* Gradient background */
+  background: linear-gradient(to bottom, #7B1FA2 20%, #4A148C 75%);
+}
+
+/* =========================
+   Header
+   ========================= */
+header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+
+  flex-shrink: 0;       
+  padding: 15px 20px;
+  text-align: center;
+  color: white;
+
+  border-bottom: 1px solid rgba(255,255,255,0.5);
+  background: transparent; /* keep gradient behind header */
+  z-index: 100;
+}
+
+header h1 {
+  margin: 0;
+}
+
+header h3 {
+  margin: 3px 0 0;
+  font-weight: normal;
+}
+
+#speak {
+  margin-top: 8px;       /* small gap below mic */
+  margin-bottom: 15px;   /* space from bottom of screen */
+  text-align: center;
+  color: white;
+  font-size: 16px;
+  position: fixed;       /* keep it stuck below mic */
+  bottom: -10px;         /* adjusts vertical placement */
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#settingsBtn {
+  position: absolute;
+  top: 18px;
+  right: 40px;
+
+  font-size: 20px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 32px;   /* make icon bigger */
+}
+
+/* =========================
+   Chat Section
+   ========================= */
+#chat {
+  flex: 1;
+  padding: 120px 20px 100px; /* space for header + mic button */
+  margin-bottom: 100px;     /* reserve space for mic */
+  color: white;
+
+  background: transparent;  
+  overflow-y: auto;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+/* Chat Bubbles */
+.msg {
+  max-width: 70%;
+  padding: 10px 15px;
+  border-radius: 15px;
+
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+.msg.you {
+  align-self: flex-start;
+  background: rgba(245, 236, 236, 0.3);
+  color: white;
+}
+
+.msg.ai {
+  align-self: flex-end;
+  background: rgba(162, 153, 153, 0.3);
+  color: white;
+}
+
+/* =========================
+   Mic Button
+   ========================= */
+#mic-btn {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  width: 60px;
+  height: 60px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: linear-gradient(145deg, #be59ea, #8846d8);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  z-index: 1000;
+}
+
+#mic-btn img {
+  width: 40px;
+  height: 40px;
+}
+
+#mic-btn.active {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Mic Button Pulse Effect */
+@keyframes pulse {
+  0% {
+    background-color: rgb(94, 4, 94);
+    box-shadow: 0 0 0 0 rgba(186, 85, 211, 0.8);
+  }
+  70% {
+    background-color: purple;
+    box-shadow: 0 0 0 50px rgba(186, 85, 211, 0);
+  }
+  100% {
+    background-color: rgb(32, 3, 32);
+    box-shadow: 0 0 0 0 rgba(186, 85, 211, 0);
+  }
+}
+
+/* =========================
+   Modal
+   ========================= */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  background: rgba(0,0,0,0.5);
+  z-index: 2000;
+}
+
+/* Modal Content */
+.modal-content {
+  background: white;
+  margin: 4% auto 2%;
+  padding: 20px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  color: purple;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+
+  overflow-y: auto; 
+}
+
+.modal-content h2 {
+  margin: 0 0 8px 0;
+}
+
+.modal-content form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+}
+
+.modal-content label {
+  /* font-size: 0.9rem; */
+  color: purple;
+  font-size: 15px;
+}
+
+.modal-content input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.modal-content button[type="submit"] {
+  align-self: flex-end;
+  padding: 8px 16px;
+
+  border: none;
+  border-radius: 8px;
+  background: #7B1FA2;
+  color: white;
+  cursor: pointer;
+}
+
+.modal-content button[type="submit"]:hover {
+  background: #9c4dcc;
+}
+
+.help {
+  background-color: rgb(201, 119, 201);
+  margin-top: 20px;
+  padding-left: 15px;
+  padding-left: 10px;
+  font-size: 15px;
+  color: purple;
+  line-height: 19px;
+}
+
+.help a {
+  color: rgb(78, 78, 189);
+  text-decoration: none;
+}
+
+/* Close Button */
+.close {
+  float: right;
+  font-size: 24px;
+  font-weight: bold;
+
+  color: #888;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: black;
+}
+
+small{
+  color: grey;
+  font-size: 10px;
+}
+
+  h1, h2, h3 {
+    font-family: "Texturina", serif;
+    font-weight: 700;   /* bold, looks strong for titles */
+  }
+
+  .page-title {
+    font-family: "Texturina", serif;
+    font-weight: 800;   /* even bolder if you want */
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* 🌍 Base modal styling (applies everywhere) */
+.modal {
+  width: 80%;
+  max-width: 500px;
+  margin: 0 auto;
+  border-radius: 16px;
+  padding: 10px 14px;     /* less padding */
+  box-sizing: border-box;
+}
+
+.modal label {
+  display: block;
+  margin-bottom: 1px;   /* reduce space */
+  font-size: 0.9rem;    /* smaller label text */
+}
+
+.modal input {
+  width: 100%;
+  padding: 4px 3px;     /* smaller input box */
+  margin-bottom: 1px;  /* reduce gap */
+  font-size: 0.9rem;
+}
+
+.modal small {
+  display: block;
+  margin-bottom: -100px;   /* reduce space */
+}
+
+/* General text + buttons */
+body {
+  font-size: 16px; /* better base */
+  line-height: 1.5;
+}
+
+h1, h2, h3 {
+  font-weight: bold;
+}
+
+input, button {
+  font-size: 1rem;
+  padding: 12px 16px;
+  border-radius: 10px;
+}
+
+/* 🔹 Extra Small Devices (iPhone SE ≤375px) */
+@media only screen and (max-width: 375px) {
+  body {
+    font-size: 17px; /* bump text */
+  }
+
+  .modal {
+    width: 96%;
+    padding: 14px;
+  }
+
+  .modal h1, .modal h2 {
+    font-size: 1.3rem;
+  }
+
+  .modal input {
+    font-size: 1rem;
+    padding: 12px;
+  }
+
+  .modal button {
+    font-size: 1rem;
+    padding: 12px 14px;
+  }
+
+  #mic-btn {
+    width: 90px;
+    height: 90px;
+    font-size: 34px;
+  }
+
+  #settingsBtn {
+    font-size: 18px;
+  }
+
+  .card {
+    padding: 18px;
+  }
+
+  /* Fix cramped header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  header h1 {
+    margin-right: 28px;
+    font-size: 1.4rem;
+    text-align: center;
+  }
+
+  header p {
+    font-size: 1rem;
+    margin-top: 4px;
+    text-align: center;
+  }
+
+  #settingsBtn {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+  }
+}
+
+/* 🔹 Small Smartphones (≤400px) */
+@media (max-width: 400px) {
+  .modal {
+    width: 95%;
+    padding: 12px;
+  }
+
+  .modal h1, .modal h2 {
+    font-size: 1.25rem;
+  }
+
+  .modal input {
+    font-size: 1rem;
+    padding: 12px;
+  }
+
+  .modal button {
+    font-size: 1rem;
+    padding: 12px 14px;
+  }
+
+    #mic-btn {
+    width: 50px;
+    height: 50px;
+  }
+
+  #settingsBtn {
+    font-size: 18px;
+  }
+
+  header h1 {
+    margin-right: 28px;
+    font-size: 1.1rem;
+    text-align: center;
+  }
+
+  header h3 {
+    font-size: 0.7rem;
+    margin-top: 4px;
+    text-align: center;
+  }
+}
+
+/* 🔹 Medium Devices (401px – 767px) iPhone XR, Pixel 7, etc. */
+@media only screen and (min-width: 401px) and (max-width: 767px) {
+  body {
+    font-size: 16px;
+  }
+
+  h1{
+    font-size: 1.6rem;
+  }
+
+  .modal {
+    width: 85%;
+    padding: 16px;
+  }
+
+  #mic-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 36px;
+  }
+
+  #settingsBtn {
+    font-size: 18px;
+  }
+}
+
+/* 🔹 Tablets (768px – 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .modal {
+    width: 70%;
+    max-width: 600px;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+  }
+
+  input, button {
+    font-size: 1.1rem;
+    padding: 14px 18px;
+  }
+
+  #mic-btn {
+    width: 70px;
+    height: 70px;
+    font-size: 38px;
+  }
+
+  #settingsBtn {
+    font-size: 20px;
+  }
+}
+
+/* 🔹 Large Screens / Desktops (≥1024px) */
+@media (min-width: 1024px) {
+  .modal {
+    width: 50%;
+    max-width: 700px;
+  }
+
+  h1{
+    font-size: 2rem;
+  }
+
+  input, button {
+    font-size: 1.1rem;
+    padding: 14px 20px;
+  }
+
+  #mic-btn {
+    width: 65px;
+    height: 65px;
+    font-size: 40px;
+  }
+
+  #settingsBtn {
+    font-size: 22px;
+  }
+
+  .modal h1 {
+  font-size: 1rem;     /* smaller than before (~16px) */
+  font-weight: 600;    /* semi-bold instead of heavy */
+  margin-bottom: 0.5rem;
+}
+
+.modal h2 {
+  font-size: rem;   /* even smaller for subtitles */
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+}
+
+
+
+
+
+
+
+
+
+.branding {
+  position: fixed;
+  bottom: 1px;
+  right: 23px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-family: "Helvetica", sans-serif;
+  transition: color 0.3s ease;
+  z-index: 2000; /* above everything */
+}
+
+.branding:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}

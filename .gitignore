@@ -11,6 +11,10 @@ __pycache__/
 .DS_Store
 
 
+
+
+
+
 # Python bytecode
 __pycache__/
 *.py[cod]
@@ -102,7 +106,3 @@ wheels/
 
 # Ignore config file
 config.json
-
-# Ignore recorded audio files
-my_recording.wav
-recording.webm

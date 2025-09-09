@@ -34,26 +34,27 @@
 
     <div id="chatBox" class="chat-box"></div>
 
-    
+
     <audio id="responseAudio" style="display:none;"></audio>
   </div>
   
 <script src="/static/script.js"></script>
 
 </body>
-</html>
- -->
+</html> -->
 
 
 
-
-
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Kampra AI - Voice Streaming</title>
-  <link rel="stylesheet" href="/static/style.css">
-  <!-- <link rel="stylesheet" href="/static/script.js"> -->
+  <link rel="stylesheet" href="/static/style1.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Texturina:ital,opsz,wght@0,12..72,100..900;1,12..72,100..900&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="container">
@@ -70,35 +71,62 @@
         <span id="closeModal" class="close">&times;</span>
         <h2>🔑 API Keys</h2>
         <form id="apiKeyForm">
-          <label>Murf API Key:</label>
-          <input type="password" name="MURF_KEY" value="{{ config['MURF_KEY'] }}"><br>
+          <label class="page-title">Murf API Key:</label>
+          <input type="password" name="MURF_KEY" placeholder="Enter your Murf API key..." value="{{ config['MURF_KEY'] }}" required>
+          <small>Used for text-to-speech voice generation</small><br>
 
-          <label>Gemini API Key:</label>
-          <input type="password" name="GEMINI_KEY" value="{{ config['GEMINI_KEY'] }}"><br>
+          <label class="page-title">Gemini API Key:</label>
+          <input type="password" name="GEMINI_KEY" placeholder="Enter your Google Gemini API key..." value="{{ config['GEMINI_KEY'] }}" required>
+          <small>Used for AI chat responses and conversations</small><br>
 
-          <label>Assembly API Key:</label>
-          <input type="password" name="ASSEMBLY_KEY" value="{{ config['ASSEMBLY_KEY'] }}"><br>
+          <label class="page-title">Assembly API Key:</label>
+          <input type="password" name="ASSEMBLY_KEY" placeholder="Enter your AssemblyAI API key..." value="{{ config['ASSEMBLY_KEY'] }}" required>
+          <small>Used for speech-to-text transcription</small><br>
 
-          <label>Weather API Key:</label>
-          <input type="password" name="WEATHER_KEY" value="{{ config['WEATHER_KEY'] }}"><br>
+          <label class="page-title">Weather API Key (Optional):</label>
+          <input type="password" name="WEATHER_KEY" placeholder="Enter your Weather API key..." value="{{ config['WEATHER_KEY'] }}">
+          <small>Used for weather information queries</small><br>
 
-          <label>Moon Tracking API Key:</label>
-          <input type="password" name="MOON_KEY" value="{{ config['MOON_KEY'] }}"><br>
+          <label class="page-title">Moon Tracking API Key (Optional):</label>
+          <input type="password" name="MOON_KEY" placeholder="Enter your Moon Tracking API key..." value="{{ config['MOON_KEY'] }}">
+          <small>Used for moon position and tracking</small><br>
 
-          <label>Horoscope API Key:</label>
-          <input type="password" name="HOROSCOPE_KEY" value="{{ config['HOROSCOPE_KEY'] }}"><br>
+          <label class="page-title">Horoscope API Key (Optional):</label>
+          <input type="password" name="HOROSCOPE_KEY" placeholder="Enter your Horoscope API key..." value="{{ config['HOROSCOPE_KEY'] }}">
+          <small>Used for daily horoscope predictions</small><br>
 
-          <button type="submit">💾 Save</button>
+          <button type="submit">Save Configuration</button>
         </form>
+
+        <div class="help">
+          <p>🔑 <b>How to get API keys:</b></p>
+          <p>Register with the providers listed below and obtain your API keys from their developer dashboards:</p>
+          <ul>
+            <li><b>Murf API:</b> <a href="https://murf.ai" target="_blank">murf.ai</a></li>
+            <li><b>Google Gemini:</b> <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a></li>
+            <li><b>AssemblyAI:</b> <a href="https://assemblyai.com" target="_blank">assemblyai.com</a></li>
+            <li><b>WeatherAPI:</b> <a href="https://openweathermap.org/" target="_blank">openweathermap.org</a></li>
+            <li><b>Moon Tracking API:</b> <a href="https://ipgeolocation.io/" target="_blank">ipgeolocation.io</a></li>
+            <li><b>Horoscope API:</b> <a href="https://www.api-ninjas.com/" target="_blank">api-ninjas.com</a></li>
+          </ul>
+        </div>
       </div>
     </div>
 
     <button id="mic-btn" type="button">
       <img src="/static/mic.png" alt="Mic Button">
     </button>
+    <p id="speak">Tap to Speak</p>
   </div>
+
+  <a href="https://murf.ai/api/docs/introduction/overview" 
+   target="_blank" 
+   class="branding">
+   Powered by <b>Murf</b>
+  </a>
 
   <script src="/static/script.js"></script>
 </body>
 </html>
+
 
